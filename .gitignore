@@ -1,0 +1,42 @@
+# macOS
+.DS_Store
+
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment and secret files
+.env
+.env.*
+!.env.example
+
+# Streamlit local secrets and runtime files
+.streamlit/secrets.toml
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+
+# Selenium/browser debug outputs
+web_scraping/debug/
+
+# Generated scraping output. Keep curated model datasets separately.
+web_scraping/dataset.csv
+
+# Local editor/project metadata
+.vscode/
+.idea/
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
