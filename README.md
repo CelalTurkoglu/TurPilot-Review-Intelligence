@@ -1,6 +1,6 @@
 # Turizm Acente Yorum Analizi ve Otonom Yanıt Sistemi
 
-Bu proje, turizm acentelerine ait müşteri yorumlarını toplayan, yorumları hizmet kategorilerine göre etiketleyen ve Streamlit arayüzü üzerinden çoklu çıktı sınıflandırma yapan bir NLP prototipidir. Üniversite bitirme projesi kapsamında hazırlanmıştır ve aynı zamanda bir turizm SaaS platformunun yapay zeka modülü için temel prototip olarak kullanılabilir.
+Bu proje, turizm acentelerine ait müşteri yorumlarını toplayan, yorumları hizmet kategorilerine göre etiketleyen ve Streamlit arayüzü üzerinden çoklu çıktı sınıflandırma yapan bir NLP prototipidir. Introduction to Machine Learning dersi projesi kapsamında hazırlanmıştır ve aynı zamanda bir turizm SaaS platformunun yapay zeka modülü için temel prototip olarak kullanılabilir.
 
 ## Proje Özeti
 
