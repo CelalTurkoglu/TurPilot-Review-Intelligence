@@ -1,6 +1,6 @@
 # Turizm Acente Yorum Analizi ve Otonom Yanıt Sistemi
 
-Bu proje, turizm acentelerine ait müşteri yorumlarını toplayan, yorumları hizmet kategorilerine göre etiketleyen ve Streamlit arayüzü üzerinden çoklu çıktı sınıflandırma yapan bir NLP prototipidir. Introduction to Machine Learning dersi projesi kapsamında hazırlanmıştır ve aynı zamanda bir turizm SaaS platformunun yapay zeka modülü için temel prototip olarak kullanılabilir.
+Bu proje, Introduction to Machine Learning dersi dönem projesi için hazırlanmış bir NLP ve çoklu çıktı sınıflandırma uygulamasıdır. Turizm acentelerine ait müşteri yorumları; ulaşım, rehber, organizasyon, otel ve yemek boyutlarında analiz edilir ve Streamlit arayüzü üzerinden otomatik kurumsal yanıt üretilir.
 
 ## Proje Özeti
 
@@ -31,10 +31,15 @@ ML_Turpilot_project/
 ├── .env.example
 ├── .gitignore
 ├── README.md
+├── docs/
+│   └── DATASET_CLEANING_REPORT.md
 ├── model/
 │   ├── app.py
 │   ├── requirements.txt
 │   └── updated_dataset.csv
+├── scripts/
+│   ├── __init__.py
+│   └── relabel_dataset.py
 └── web_scraping/
     ├── absa_analysis.py
     ├── google_reviews_scraper.py
@@ -113,7 +118,30 @@ python3 absa_analysis.py
 
 API key artık kod içinde tutulmaz. `OPENROUTER_API_KEY` değeri proje kökündeki `.env` dosyasından okunur.
 
-### 3. Streamlit ML Uygulaması
+### 3. Veri Etiketi Temizleme Scripti
+
+Dosya:
+
+```text
+scripts/relabel_dataset.py
+```
+
+İlk etiketli veri setinde zayıf LLM kaynaklı ciddi 0/1/2 hataları bulunduğu için ham `web_scraping/dataset.csv` yeniden işlenmiştir. Bu script yorumları baştan tarar, her kategori için aspect mention ve yakın bağlamdaki olumlu/olumsuz sinyalleri çıkarır, ardından iki `updated_dataset.csv` kopyasını eşitler.
+
+Çalıştırma:
+
+```bash
+python3 scripts/relabel_dataset.py
+```
+
+Üretilen dosyalar:
+
+```text
+model/updated_dataset.csv
+web_scraping/updated_dataset.csv
+```
+
+### 4. Streamlit ML Uygulaması
 
 Dosya:
 
@@ -126,11 +154,11 @@ Bu uygulama `model/updated_dataset.csv` veri seti üzerinden modeli eğitir ve w
 Kullanılan ML yaklaşımı:
 
 - `clean_text` fonksiyonu ile Türkçe metin temizleme
-- `TfidfVectorizer` ile unigram + bigram metin özellikleri
-- `ColumnTransformer` ile metin özellikleri ve `Yildiz` puanını birleştirme
-- `MinMaxScaler` ile yıldız puanını ölçekleme
+- `TfidfVectorizer` ile word n-gram ve character n-gram özellikleri
+- `ColumnTransformer` ile metin, yıldız puanı ve domain signal feature'larını birleştirme
+- `StandardScaler` ile numeric feature'ları ölçekleme
 - `MultiOutputClassifier`
-- `LogisticRegression(class_weight="balanced")`
+- `LinearSVC(class_weight="balanced")`
 
 Çalıştırma:
 
@@ -159,6 +187,15 @@ Model uygulaması aşağıdaki kolonları bekler:
 | `Organizasyon` | 0, 1, 2 | Organizasyon etiketi |
 | `Otel` | 0, 1, 2 | Otel etiketi |
 | `Yemek` | 0, 1, 2 | Yemek etiketi |
+
+Güncel veri seti:
+
+```text
+Ham yorum sayısı: 532
+Model eğitiminde kullanılan yorum sayısı: 527
+```
+
+Beş satır çok kısa veya sadece sembol içerdiği için temiz metin aşamasında model eğitiminden çıkarılır.
 
 Model uygulaması şu dosya isimlerini sırasıyla arar:
 
@@ -224,6 +261,37 @@ Güvenlik:
 - Gerçek API key hiçbir zaman commit edilmemelidir.
 - Daha önce local dosyada hardcoded API key bulunduysa, GitHub'a yüklemeden önce ilgili sağlayıcı panelinden key rotate edilmelidir.
 
+## Etiket Temizleme Özeti
+
+İlk `updated_dataset.csv` dosyasında zayıf LLM kaynaklı tutarsız etiketler vardı. Bu yüzden `scripts/relabel_dataset.py` ile tüm yorumlar yeniden etiketlendi.
+
+Özet:
+
+```text
+En az bir kategorisi değişen satır: 394 / 532
+Ulasim değişen label: 187
+Rehber değişen label: 156
+Organizasyon değişen label: 215
+Otel değişen label: 76
+Yemek değişen label: 78
+```
+
+Güncel label dağılımı:
+
+| Kategori | 0 | 1 | 2 |
+| --- | ---: | ---: | ---: |
+| Ulasim | 271 | 140 | 121 |
+| Rehber | 217 | 220 | 95 |
+| Organizasyon | 39 | 326 | 167 |
+| Otel | 382 | 88 | 62 |
+| Yemek | 373 | 80 | 79 |
+
+Detaylı rapor:
+
+```text
+docs/DATASET_CLEANING_REPORT.md
+```
+
 ## Model Eğitim Akışı
 
 `model/app.py` içinde model her Streamlit çalışmasında cache ile eğitilir.
@@ -235,14 +303,30 @@ Adımlar:
 3. `Yildiz` ve hedef kolonlar numeric tipe çevrilir.
 4. `Yorum` metni temizlenir ve `CleanYorum` kolonu oluşturulur.
 5. Veri train/test olarak ayrılır.
-6. `ColumnTransformer` iki feature bloğu üretir:
-   - `CleanYorum` -> `TfidfVectorizer(ngram_range=(1, 2))`
-   - `Yildiz` -> `MinMaxScaler`
-7. `MultiOutputClassifier(LogisticRegression(...))` modeli eğitilir.
-8. Sidebar için metrikler hesaplanır:
+6. Domain feature kolonları oluşturulur:
+   - Her kategori için `mentioned`
+   - Her kategori için `pos_score`
+   - Her kategori için `neg_score`
+   - Her kategori için yıldız destekli `star_pos` ve `star_neg`
+7. `ColumnTransformer` üç feature bloğu üretir:
+   - `CleanYorum` -> word `TfidfVectorizer(ngram_range=(1, 3))`
+   - `CleanYorum` -> character `TfidfVectorizer(ngram_range=(3, 5))`
+   - `Yildiz` + domain feature'ları -> `StandardScaler`
+8. `MultiOutputClassifier(LinearSVC(...))` modeli eğitilir.
+9. Sidebar için metrikler hesaplanır:
    - Exact Match Accuracy
    - Kategori bazlı accuracy
    - Macro F1, Weighted F1, Precision, Recall
+   - Hamming Loss
+
+Güncel test sonucu:
+
+```text
+Exact Match Accuracy: 87.74%
+Ortalama Kategori Accuracy: 97.36%
+Ortalama Macro F1: 95.17%
+Hamming Loss: 2.64%
+```
 
 ## Otomatik Yanıt Mantığı
 

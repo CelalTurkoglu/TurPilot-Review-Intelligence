@@ -1,17 +1,25 @@
 import re
 import string
+import sys
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 from sklearn.compose import ColumnTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.model_selection import train_test_split
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import LinearSVC
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from scripts.relabel_dataset import extract_aspect_signal
 
 
 # -----------------------------------------------------------------------------
@@ -33,6 +41,12 @@ st.set_page_config(
 BASE_DIR = Path(__file__).resolve().parent
 DATASET_FILENAMES = ["dataset.csv", "updated_dataset.csv"]
 TARGET_COLUMNS = ["Ulasim", "Rehber", "Organizasyon", "Otel", "Yemek"]
+DOMAIN_SIGNAL_NAMES = ["mentioned", "pos_score", "neg_score", "star_pos", "star_neg"]
+DOMAIN_FEATURE_COLUMNS = [
+    f"{category}_{signal_name}"
+    for category in TARGET_COLUMNS
+    for signal_name in DOMAIN_SIGNAL_NAMES
+]
 LABEL_NAMES = {
     0: "Bahsedilmemiş",
     1: "Övgü",
@@ -94,6 +108,24 @@ def clean_text(text: str) -> str:
     return " ".join(tokens)
 
 
+def add_domain_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Add transparent aspect-sentiment signals as numeric ML features."""
+    enriched_df = df.copy()
+
+    for category in TARGET_COLUMNS:
+        signals = [
+            extract_aspect_signal(review, category, int(star_rating))
+            for review, star_rating in zip(enriched_df["Yorum"], enriched_df["Yildiz"])
+        ]
+
+        for signal_name in DOMAIN_SIGNAL_NAMES:
+            enriched_df[f"{category}_{signal_name}"] = [
+                signal[signal_name] for signal in signals
+            ]
+
+    return enriched_df
+
+
 @st.cache_data(show_spinner=False)
 def load_dataset() -> pd.DataFrame:
     """Load and validate the labelled tourism review dataset."""
@@ -133,16 +165,17 @@ def load_dataset() -> pd.DataFrame:
 
     df["CleanYorum"] = df["Yorum"].apply(clean_text)
     df = df[df["CleanYorum"].str.len() > 0].copy()
+    df = add_domain_features(df)
 
     return df
 
 
 @st.cache_resource(show_spinner=False)
 def train_model(df: pd.DataFrame):
-    """Train a text + star-rating MultiOutput Logistic Regression classifier."""
-    # Refactor note: X is now a two-column feature table. CleanYorum captures
-    # the NLP signal, while Yildiz provides an explicit numeric satisfaction cue.
-    X = df[["CleanYorum", "Yildiz"]]
+    """Train a text + star-rating + domain-signal MultiOutput classifier."""
+    # X combines three feature groups: cleaned text, explicit star rating, and
+    # transparent aspect-level mention/positive/negative signal columns.
+    X = df[["CleanYorum", "Yildiz", *DOMAIN_FEATURE_COLUMNS]]
     y = df[TARGET_COLUMNS]
 
     # A fixed random_state makes the academic demo reproducible.
@@ -154,34 +187,42 @@ def train_model(df: pd.DataFrame):
         shuffle=True,
     )
 
-    # Refactor note: ColumnTransformer builds a feature union. The text column is
-    # converted with TF-IDF using unigrams+bigrams, and the star-rating column is
-    # scaled into the 0-1 range before both feature blocks are concatenated.
+    # Refactor note: Word n-grams catch phrases such as "çok iyiydi"; character
+    # n-grams help with Turkish suffixes; numeric domain features are scaled.
     preprocessor = ColumnTransformer(
         transformers=[
             (
-                "text_tfidf",
+                "word_tfidf",
                 TfidfVectorizer(
-                    max_features=15000,
-                    ngram_range=(1, 2),
+                    max_features=20000,
+                    ngram_range=(1, 3),
                     min_df=1,
                     sublinear_tf=True,
                 ),
                 "CleanYorum",
             ),
             (
-                "star_rating",
-                MinMaxScaler(),
-                ["Yildiz"],
+                "char_tfidf",
+                TfidfVectorizer(
+                    analyzer="char_wb",
+                    max_features=12000,
+                    ngram_range=(3, 5),
+                    min_df=1,
+                    sublinear_tf=True,
+                ),
+                "CleanYorum",
+            ),
+            (
+                "numeric_signals",
+                StandardScaler(),
+                ["Yildiz", *DOMAIN_FEATURE_COLUMNS],
             ),
         ],
         remainder="drop",
     )
 
-    # Refactor note: class_weight='balanced' reduces the impact of class
-    # imbalance for minority labels such as praise or rare complaints. C=50.0
-    # was selected after a small validation check because it improved exact-match
-    # accuracy while keeping the balanced class weighting requirement.
+    # LinearSVC is strong for sparse TF-IDF text features. class_weight='balanced'
+    # reduces the impact of minority classes in each output category.
     model = Pipeline(
         steps=[
             (
@@ -191,11 +232,11 @@ def train_model(df: pd.DataFrame):
             (
                 "classifier",
                 MultiOutputClassifier(
-                    LogisticRegression(
-                        max_iter=4000,
+                    LinearSVC(
                         class_weight="balanced",
-                        C=50.0,
-                        solver="lbfgs",
+                        C=2.0,
+                        max_iter=10000,
+                        random_state=42,
                     )
                 ),
             ),
@@ -228,11 +269,22 @@ def train_model(df: pd.DataFrame):
         )
         for index, column in enumerate(TARGET_COLUMNS)
     }
+    mean_category_accuracy = float(sum(per_category_accuracy.values()) / len(per_category_accuracy))
+    mean_macro_f1 = float(
+        sum(report["macro avg"]["f1-score"] for report in reports.values()) / len(reports)
+    )
+    mean_weighted_f1 = float(
+        sum(report["weighted avg"]["f1-score"] for report in reports.values()) / len(reports)
+    )
 
     metrics = {
         "train_size": len(X_train),
         "test_size": len(X_test),
         "exact_match_accuracy": exact_match_accuracy,
+        "hamming_loss": float((y_test.to_numpy() != y_pred).mean()),
+        "mean_category_accuracy": mean_category_accuracy,
+        "mean_macro_f1": mean_macro_f1,
+        "mean_weighted_f1": mean_weighted_f1,
         "per_category_accuracy": per_category_accuracy,
         "reports": reports,
     }
@@ -342,11 +394,14 @@ def generate_auto_reply(predictions: dict, star_rating: int) -> str:
 def render_sidebar(metrics: dict, df: pd.DataFrame) -> None:
     """Render academic model metrics in the Streamlit sidebar."""
     st.sidebar.header("Model Performansı")
-    st.sidebar.caption("TF-IDF N-Gram + Yıldız Feature + Balanced Logistic Regression")
+    st.sidebar.caption("Word/Char TF-IDF + Domain Features + Balanced LinearSVC")
 
     st.sidebar.metric("Veri Sayısı", len(df))
     st.sidebar.metric("Train/Test", f"{metrics['train_size']} / {metrics['test_size']}")
     st.sidebar.metric("Exact Match Accuracy", f"{metrics['exact_match_accuracy']:.2%}")
+    st.sidebar.metric("Ortalama Kategori Accuracy", f"{metrics['mean_category_accuracy']:.2%}")
+    st.sidebar.metric("Ortalama Macro F1", f"{metrics['mean_macro_f1']:.2%}")
+    st.sidebar.metric("Hamming Loss", f"{metrics['hamming_loss']:.2%}")
 
     st.sidebar.subheader("Kategori Accuracy")
     for category, score in metrics["per_category_accuracy"].items():
@@ -470,22 +525,24 @@ def main() -> None:
             st.warning("Lütfen analiz etmek için bir yorum girin.")
             return
 
-        # The model expects the same two-feature schema used during training:
-        # cleaned review text plus the user-selected star rating.
-        cleaned_review = clean_text(review_text)
+        # The model expects the same schema used during training: cleaned text,
+        # selected star rating, and aspect-specific domain signal features.
         prediction_input = pd.DataFrame(
             [
                 {
-                    "CleanYorum": cleaned_review,
+                    "Yorum": review_text,
+                    "CleanYorum": clean_text(review_text),
                     "Yildiz": float(star_rating),
                 }
             ]
         )
+        prediction_input = add_domain_features(prediction_input)
         prediction = model.predict(prediction_input)[0]
         predictions = {
             category: int(prediction[index])
             for index, category in enumerate(TARGET_COLUMNS)
         }
+        cleaned_review = prediction_input.loc[0, "CleanYorum"]
 
         st.subheader("Tahmin Edilen Kategori Etiketleri")
         badges = [build_badge(category, value) for category, value in predictions.items()]
