@@ -1,25 +1,10 @@
-import re
-import string
-import sys
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
-from sklearn.compose import ColumnTransformer
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics import accuracy_score, classification_report
-from sklearn.model_selection import train_test_split
-from sklearn.multioutput import MultiOutputClassifier
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
-from sklearn.svm import LinearSVC
 
-
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
-from scripts.relabel_dataset import extract_aspect_signal
+from training import LABEL_NAMES, TARGET_COLUMNS, clean_text, load_dataset as load_training_dataset
+from training import train_model as train_leakage_free_model
 
 
 # -----------------------------------------------------------------------------
@@ -39,19 +24,6 @@ st.set_page_config(
 # changes in the future.
 # -----------------------------------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent
-DATASET_FILENAMES = ["dataset.csv", "updated_dataset.csv"]
-TARGET_COLUMNS = ["Ulasim", "Rehber", "Organizasyon", "Otel", "Yemek"]
-DOMAIN_SIGNAL_NAMES = ["mentioned", "pos_score", "neg_score", "star_pos", "star_neg"]
-DOMAIN_FEATURE_COLUMNS = [
-    f"{category}_{signal_name}"
-    for category in TARGET_COLUMNS
-    for signal_name in DOMAIN_SIGNAL_NAMES
-]
-LABEL_NAMES = {
-    0: "Bahsedilmemiş",
-    1: "Övgü",
-    2: "Şikayet",
-}
 LABEL_CLASSES = {
     0: "neutral-badge",
     1: "positive-badge",
@@ -59,237 +31,20 @@ LABEL_CLASSES = {
 }
 
 
-# -----------------------------------------------------------------------------
-# Turkish stop-word list
-# The project must run without downloading external NLP resources, so the most
-# common Turkish stop-words are embedded directly in the application.
-# -----------------------------------------------------------------------------
-TURKISH_STOPWORDS = {
-    "acaba", "ama", "aslında", "az", "bazı", "belki", "biri", "birkaç",
-    "birşey", "biz", "bu", "çok", "çünkü", "da", "daha", "de", "defa",
-    "diye", "eğer", "en", "gibi", "hem", "hep", "hepsi", "her", "hiç",
-    "için", "ile", "ise", "kez", "ki", "kim", "mı", "mu", "mü", "nasıl",
-    "ne", "neden", "nerde", "nerede", "nereye", "niçin", "niye", "o",
-    "sanki", "şey", "siz", "şu", "tüm", "ve", "veya", "ya", "yani",
-    "bir", "olarak", "olan", "oldu", "olduk", "olur", "oluyor", "ben",
-    "bana", "beni", "bizim", "sizin", "onlar", "onların", "kadar", "sonra",
-    "önce", "var", "yok", "şöyle", "böyle", "ancak", "fakat", "lakin",
-}
-
-
-# These words look like stop-words, but they are important for sentiment context.
-# Keeping them allows bigrams such as "çok iyiydi" and "hiç memnun" to survive.
-CONTEXT_WORDS_TO_KEEP = {"çok", "hiç", "değil", "değildi", "kötü", "iyi"}
-
-
-def clean_text(text: str) -> str:
-    """Clean Turkish review text before TF-IDF vectorization."""
-    # Convert possible missing values or non-string inputs into safe strings.
-    text = "" if pd.isna(text) else str(text)
-
-    # Lowercasing reduces duplicate vocabulary entries such as "Otel" and "otel".
-    text = text.lower()
-
-    # Remove punctuation while preserving Turkish alphabet characters.
-    punctuation_pattern = f"[{re.escape(string.punctuation)}“”‘’…]"
-    text = re.sub(punctuation_pattern, " ", text)
-
-    # Remove digits because star rating is handled separately by the interface.
-    text = re.sub(r"\d+", " ", text)
-
-    # Tokenize by whitespace and remove Turkish stop-words.
-    tokens = [
-        token
-        for token in text.split()
-        if (token not in TURKISH_STOPWORDS or token in CONTEXT_WORDS_TO_KEEP)
-        and len(token) > 1
-    ]
-
-    return " ".join(tokens)
-
-
-def add_domain_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Add transparent aspect-sentiment signals as numeric ML features."""
-    enriched_df = df.copy()
-
-    for category in TARGET_COLUMNS:
-        signals = [
-            extract_aspect_signal(review, category, int(star_rating))
-            for review, star_rating in zip(enriched_df["Yorum"], enriched_df["Yildiz"])
-        ]
-
-        for signal_name in DOMAIN_SIGNAL_NAMES:
-            enriched_df[f"{category}_{signal_name}"] = [
-                signal[signal_name] for signal in signals
-            ]
-
-    return enriched_df
-
-
 @st.cache_data(show_spinner=False)
 def load_dataset() -> pd.DataFrame:
     """Load and validate the labelled tourism review dataset."""
-    # Prefer dataset.csv for the final project, but keep updated_dataset.csv as
-    # a backwards-compatible fallback for the current workspace.
-    data_path = next(
-        (BASE_DIR / filename for filename in DATASET_FILENAMES if (BASE_DIR / filename).exists()),
-        None,
-    )
-
-    if data_path is None:
-        expected_files = ", ".join(DATASET_FILENAMES)
-        st.error(f"Dataset bulunamadı. Beklenen dosyalardan biri gerekli: {expected_files}")
+    try:
+        return load_training_dataset(BASE_DIR)
+    except (FileNotFoundError, ValueError) as exc:
+        st.error(str(exc))
         st.stop()
-
-    # utf-8-sig handles CSV files exported from Excel with a UTF-8 BOM marker.
-    df = pd.read_csv(data_path, encoding="utf-8-sig")
-
-    required_columns = ["Yorum", "Yildiz", *TARGET_COLUMNS]
-    missing_columns = [column for column in required_columns if column not in df.columns]
-    if missing_columns:
-        st.error(f"Eksik kolonlar: {', '.join(missing_columns)}")
-        st.stop()
-
-    # Drop rows that cannot be used for supervised training.
-    df = df.dropna(subset=["Yorum", "Yildiz", *TARGET_COLUMNS]).copy()
-
-    # The star rating is now used as an independent numeric feature in the
-    # ColumnTransformer, so it must be cleaned before the train/test split.
-    df["Yildiz"] = pd.to_numeric(df["Yildiz"], errors="coerce").fillna(3).astype(float)
-    df["Yildiz"] = df["Yildiz"].clip(lower=1, upper=5)
-
-    # Force target columns into integer classes: 0 = none, 1 = praise, 2 = complaint.
-    for column in TARGET_COLUMNS:
-        df[column] = pd.to_numeric(df[column], errors="coerce").fillna(0).astype(int)
-        df[column] = df[column].clip(lower=0, upper=2)
-
-    df["CleanYorum"] = df["Yorum"].apply(clean_text)
-    df = df[df["CleanYorum"].str.len() > 0].copy()
-    df = add_domain_features(df)
-
-    return df
 
 
 @st.cache_resource(show_spinner=False)
 def train_model(df: pd.DataFrame):
-    """Train a text + star-rating + domain-signal MultiOutput classifier."""
-    # X combines three feature groups: cleaned text, explicit star rating, and
-    # transparent aspect-level mention/positive/negative signal columns.
-    X = df[["CleanYorum", "Yildiz", *DOMAIN_FEATURE_COLUMNS]]
-    y = df[TARGET_COLUMNS]
-
-    # A fixed random_state makes the academic demo reproducible.
-    X_train, X_test, y_train, y_test = train_test_split(
-        X,
-        y,
-        test_size=0.2,
-        random_state=42,
-        shuffle=True,
-    )
-
-    # Refactor note: Word n-grams catch phrases such as "çok iyiydi"; character
-    # n-grams help with Turkish suffixes; numeric domain features are scaled.
-    preprocessor = ColumnTransformer(
-        transformers=[
-            (
-                "word_tfidf",
-                TfidfVectorizer(
-                    max_features=20000,
-                    ngram_range=(1, 3),
-                    min_df=1,
-                    sublinear_tf=True,
-                ),
-                "CleanYorum",
-            ),
-            (
-                "char_tfidf",
-                TfidfVectorizer(
-                    analyzer="char_wb",
-                    max_features=12000,
-                    ngram_range=(3, 5),
-                    min_df=1,
-                    sublinear_tf=True,
-                ),
-                "CleanYorum",
-            ),
-            (
-                "numeric_signals",
-                StandardScaler(),
-                ["Yildiz", *DOMAIN_FEATURE_COLUMNS],
-            ),
-        ],
-        remainder="drop",
-    )
-
-    # LinearSVC is strong for sparse TF-IDF text features. class_weight='balanced'
-    # reduces the impact of minority classes in each output category.
-    model = Pipeline(
-        steps=[
-            (
-                "features",
-                preprocessor,
-            ),
-            (
-                "classifier",
-                MultiOutputClassifier(
-                    LinearSVC(
-                        class_weight="balanced",
-                        C=2.0,
-                        max_iter=10000,
-                        random_state=42,
-                    )
-                ),
-            ),
-        ]
-    )
-
-    model.fit(X_train, y_train)
-    y_pred = model.predict(X_test)
-
-    # Exact match accuracy is strict: all five labels must be correct at once.
-    # sklearn.accuracy_score does not support multiclass-multioutput directly,
-    # so the row-wise equality is calculated manually.
-    exact_match_accuracy = float((y_test.to_numpy() == y_pred).all(axis=1).mean())
-
-    # Per-category accuracy is easier to interpret in the sidebar.
-    per_category_accuracy = {
-        column: accuracy_score(y_test[column], y_pred[:, index])
-        for index, column in enumerate(TARGET_COLUMNS)
-    }
-
-    # Classification reports are stored as dictionaries for a compact UI table.
-    reports = {
-        column: classification_report(
-            y_test[column],
-            y_pred[:, index],
-            labels=[0, 1, 2],
-            target_names=[LABEL_NAMES[0], LABEL_NAMES[1], LABEL_NAMES[2]],
-            output_dict=True,
-            zero_division=0,
-        )
-        for index, column in enumerate(TARGET_COLUMNS)
-    }
-    mean_category_accuracy = float(sum(per_category_accuracy.values()) / len(per_category_accuracy))
-    mean_macro_f1 = float(
-        sum(report["macro avg"]["f1-score"] for report in reports.values()) / len(reports)
-    )
-    mean_weighted_f1 = float(
-        sum(report["weighted avg"]["f1-score"] for report in reports.values()) / len(reports)
-    )
-
-    metrics = {
-        "train_size": len(X_train),
-        "test_size": len(X_test),
-        "exact_match_accuracy": exact_match_accuracy,
-        "hamming_loss": float((y_test.to_numpy() != y_pred).mean()),
-        "mean_category_accuracy": mean_category_accuracy,
-        "mean_macro_f1": mean_macro_f1,
-        "mean_weighted_f1": mean_weighted_f1,
-        "per_category_accuracy": per_category_accuracy,
-        "reports": reports,
-    }
-
-    return model, metrics
+    """Train a leakage-free text + star-rating MultiOutput classifier."""
+    return train_leakage_free_model(df)
 
 
 def build_badge(category: str, value: int) -> str:
@@ -394,7 +149,7 @@ def generate_auto_reply(predictions: dict, star_rating: int) -> str:
 def render_sidebar(metrics: dict, df: pd.DataFrame) -> None:
     """Render academic model metrics in the Streamlit sidebar."""
     st.sidebar.header("Model Performansı")
-    st.sidebar.caption("Word/Char TF-IDF + Domain Features + Balanced LinearSVC")
+    st.sidebar.caption("Leakage-free Word/Char TF-IDF + Yildiz + Balanced LinearSVC")
 
     st.sidebar.metric("Veri Sayısı", len(df))
     st.sidebar.metric("Train/Test", f"{metrics['train_size']} / {metrics['test_size']}")
@@ -525,18 +280,15 @@ def main() -> None:
             st.warning("Lütfen analiz etmek için bir yorum girin.")
             return
 
-        # The model expects the same schema used during training: cleaned text,
-        # selected star rating, and aspect-specific domain signal features.
+        # The model sees only the cleaned review text and the selected star rating.
         prediction_input = pd.DataFrame(
             [
                 {
-                    "Yorum": review_text,
                     "CleanYorum": clean_text(review_text),
                     "Yildiz": float(star_rating),
                 }
             ]
         )
-        prediction_input = add_domain_features(prediction_input)
         prediction = model.predict(prediction_input)[0]
         predictions = {
             category: int(prediction[index])

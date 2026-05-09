@@ -1,0 +1,1139 @@
+{
+  "dataset_rows_used": 1087,
+  "holdout": {
+    "exact_match_accuracy": 0.481651376146789,
+    "hamming_loss": 0.1614678899082569,
+    "mean_category_accuracy": 0.8385321100917432,
+    "mean_macro_f1": 0.7301923896054756,
+    "mean_weighted_f1": 0.828798410145243,
+    "per_category_accuracy": {
+      "Ulasim": 0.8119266055045872,
+      "Rehber": 0.8027522935779816,
+      "Organizasyon": 0.8256880733944955,
+      "Otel": 0.8990825688073395,
+      "Yemek": 0.8532110091743119
+    },
+    "reports": {
+      "Ulasim": {
+        "Bahsedilmemiş": {
+          "precision": 0.8114754098360656,
+          "recall": 0.9166666666666666,
+          "f1-score": 0.8608695652173913,
+          "support": 108.0
+        },
+        "Övgü": {
+          "precision": 0.8478260869565217,
+          "recall": 0.639344262295082,
+          "f1-score": 0.7289719626168224,
+          "support": 61.0
+        },
+        "Şikayet": {
+          "precision": 0.78,
+          "recall": 0.7959183673469388,
+          "f1-score": 0.7878787878787878,
+          "support": 49.0
+        },
+        "accuracy": 0.8119266055045872,
+        "macro avg": {
+          "precision": 0.8131004989308623,
+          "recall": 0.7839764321028957,
+          "f1-score": 0.7925734385710005,
+          "support": 218.0
+        },
+        "weighted avg": {
+          "precision": 0.8145721814983619,
+          "recall": 0.8119266055045872,
+          "f1-score": 0.8075562539869955,
+          "support": 218.0
+        }
+      },
+      "Rehber": {
+        "Bahsedilmemiş": {
+          "precision": 0.8235294117647058,
+          "recall": 0.875,
+          "f1-score": 0.8484848484848485,
+          "support": 80.0
+        },
+        "Övgü": {
+          "precision": 0.8041237113402062,
+          "recall": 0.8478260869565217,
+          "f1-score": 0.8253968253968254,
+          "support": 92.0
+        },
+        "Şikayet": {
+          "precision": 0.75,
+          "recall": 0.5869565217391305,
+          "f1-score": 0.6585365853658537,
+          "support": 46.0
+        },
+        "accuracy": 0.8027522935779816,
+        "macro avg": {
+          "precision": 0.7925510410349706,
+          "recall": 0.7699275362318841,
+          "f1-score": 0.7774727530825092,
+          "support": 218.0
+        },
+        "weighted avg": {
+          "precision": 0.799824469653557,
+          "recall": 0.8027522935779816,
+          "f1-score": 0.7986604529455279,
+          "support": 218.0
+        }
+      },
+      "Organizasyon": {
+        "Bahsedilmemiş": {
+          "precision": 1.0,
+          "recall": 0.18181818181818182,
+          "f1-score": 0.3076923076923077,
+          "support": 11.0
+        },
+        "Övgü": {
+          "precision": 0.8316831683168316,
+          "recall": 0.8316831683168316,
+          "f1-score": 0.8316831683168316,
+          "support": 101.0
+        },
+        "Şikayet": {
+          "precision": 0.8173913043478261,
+          "recall": 0.8867924528301887,
+          "f1-score": 0.8506787330316742,
+          "support": 106.0
+        },
+        "accuracy": 0.8256880733944955,
+        "macro avg": {
+          "precision": 0.8830248242215526,
+          "recall": 0.6334312676550674,
+          "f1-score": 0.6633514030136046,
+          "support": 218.0
+        },
+        "weighted avg": {
+          "precision": 0.8332269644994018,
+          "recall": 0.8256880733944955,
+          "f1-score": 0.8144796380090498,
+          "support": 218.0
+        }
+      },
+      "Otel": {
+        "Bahsedilmemiş": {
+          "precision": 0.9230769230769231,
+          "recall": 0.9882352941176471,
+          "f1-score": 0.9545454545454546,
+          "support": 170.0
+        },
+        "Övgü": {
+          "precision": 0.6923076923076923,
+          "recall": 0.47368421052631576,
+          "f1-score": 0.5625,
+          "support": 19.0
+        },
+        "Şikayet": {
+          "precision": 0.8260869565217391,
+          "recall": 0.6551724137931034,
+          "f1-score": 0.7307692307692307,
+          "support": 29.0
+        },
+        "accuracy": 0.8990825688073395,
+        "macro avg": {
+          "precision": 0.8138238573021183,
+          "recall": 0.7056973061456887,
+          "f1-score": 0.7492715617715618,
+          "support": 218.0
+        },
+        "weighted avg": {
+          "precision": 0.8900616734681355,
+          "recall": 0.8990825688073395,
+          "f1-score": 0.8906079585552062,
+          "support": 218.0
+        }
+      },
+      "Yemek": {
+        "Bahsedilmemiş": {
+          "precision": 0.8736263736263736,
+          "recall": 0.9814814814814815,
+          "f1-score": 0.9244186046511628,
+          "support": 162.0
+        },
+        "Övgü": {
+          "precision": 0.8571428571428571,
+          "recall": 0.2727272727272727,
+          "f1-score": 0.41379310344827586,
+          "support": 22.0
+        },
+        "Şikayet": {
+          "precision": 0.7241379310344828,
+          "recall": 0.6176470588235294,
+          "f1-score": 0.6666666666666666,
+          "support": 34.0
+        },
+        "accuracy": 0.8532110091743119,
+        "macro avg": {
+          "precision": 0.8183023872679045,
+          "recall": 0.623951937677428,
+          "f1-score": 0.6682927915887018,
+          "support": 218.0
+        },
+        "weighted avg": {
+          "precision": 0.8486481882559074,
+          "recall": 0.8532110091743119,
+          "f1-score": 0.8326877472294362,
+          "support": 218.0
+        }
+      }
+    },
+    "train_size": 869,
+    "test_size": 218,
+    "feature_columns": [
+      "CleanYorum",
+      "Yildiz"
+    ],
+    "evaluation": "holdout_80_20"
+  },
+  "cross_validation": {
+    "exact_match_accuracy_mean": 0.4378429797488691,
+    "exact_match_accuracy_std": 0.0331811004156586,
+    "hamming_loss_mean": 0.1632139686297721,
+    "hamming_loss_std": 0.00883030600662379,
+    "mean_category_accuracy_mean": 0.8367860313702279,
+    "mean_category_accuracy_std": 0.008830306006623797,
+    "mean_macro_f1_mean": 0.7276832681866422,
+    "mean_macro_f1_std": 0.018822308188044437,
+    "mean_weighted_f1_mean": 0.8280115395160228,
+    "mean_weighted_f1_std": 0.010943255980753703,
+    "evaluation": "5_fold_cross_validation",
+    "n_splits": 5,
+    "rows_used": 1087,
+    "feature_columns": [
+      "CleanYorum",
+      "Yildiz"
+    ],
+    "per_category_accuracy_mean": {
+      "Ulasim": 0.8012767936413987,
+      "Rehber": 0.7994419312560773,
+      "Organizasyon": 0.8417790555109288,
+      "Otel": 0.8693146746712891,
+      "Yemek": 0.8721177017714454
+    },
+    "folds": [
+      {
+        "exact_match_accuracy": 0.481651376146789,
+        "hamming_loss": 0.1614678899082569,
+        "mean_category_accuracy": 0.8385321100917432,
+        "mean_macro_f1": 0.7301923896054756,
+        "mean_weighted_f1": 0.828798410145243,
+        "per_category_accuracy": {
+          "Ulasim": 0.8119266055045872,
+          "Rehber": 0.8027522935779816,
+          "Organizasyon": 0.8256880733944955,
+          "Otel": 0.8990825688073395,
+          "Yemek": 0.8532110091743119
+        },
+        "reports": {
+          "Ulasim": {
+            "Bahsedilmemiş": {
+              "precision": 0.8114754098360656,
+              "recall": 0.9166666666666666,
+              "f1-score": 0.8608695652173913,
+              "support": 108.0
+            },
+            "Övgü": {
+              "precision": 0.8478260869565217,
+              "recall": 0.639344262295082,
+              "f1-score": 0.7289719626168224,
+              "support": 61.0
+            },
+            "Şikayet": {
+              "precision": 0.78,
+              "recall": 0.7959183673469388,
+              "f1-score": 0.7878787878787878,
+              "support": 49.0
+            },
+            "accuracy": 0.8119266055045872,
+            "macro avg": {
+              "precision": 0.8131004989308623,
+              "recall": 0.7839764321028957,
+              "f1-score": 0.7925734385710005,
+              "support": 218.0
+            },
+            "weighted avg": {
+              "precision": 0.8145721814983619,
+              "recall": 0.8119266055045872,
+              "f1-score": 0.8075562539869955,
+              "support": 218.0
+            }
+          },
+          "Rehber": {
+            "Bahsedilmemiş": {
+              "precision": 0.8235294117647058,
+              "recall": 0.875,
+              "f1-score": 0.8484848484848485,
+              "support": 80.0
+            },
+            "Övgü": {
+              "precision": 0.8041237113402062,
+              "recall": 0.8478260869565217,
+              "f1-score": 0.8253968253968254,
+              "support": 92.0
+            },
+            "Şikayet": {
+              "precision": 0.75,
+              "recall": 0.5869565217391305,
+              "f1-score": 0.6585365853658537,
+              "support": 46.0
+            },
+            "accuracy": 0.8027522935779816,
+            "macro avg": {
+              "precision": 0.7925510410349706,
+              "recall": 0.7699275362318841,
+              "f1-score": 0.7774727530825092,
+              "support": 218.0
+            },
+            "weighted avg": {
+              "precision": 0.799824469653557,
+              "recall": 0.8027522935779816,
+              "f1-score": 0.7986604529455279,
+              "support": 218.0
+            }
+          },
+          "Organizasyon": {
+            "Bahsedilmemiş": {
+              "precision": 1.0,
+              "recall": 0.18181818181818182,
+              "f1-score": 0.3076923076923077,
+              "support": 11.0
+            },
+            "Övgü": {
+              "precision": 0.8316831683168316,
+              "recall": 0.8316831683168316,
+              "f1-score": 0.8316831683168316,
+              "support": 101.0
+            },
+            "Şikayet": {
+              "precision": 0.8173913043478261,
+              "recall": 0.8867924528301887,
+              "f1-score": 0.8506787330316742,
+              "support": 106.0
+            },
+            "accuracy": 0.8256880733944955,
+            "macro avg": {
+              "precision": 0.8830248242215526,
+              "recall": 0.6334312676550674,
+              "f1-score": 0.6633514030136046,
+              "support": 218.0
+            },
+            "weighted avg": {
+              "precision": 0.8332269644994018,
+              "recall": 0.8256880733944955,
+              "f1-score": 0.8144796380090498,
+              "support": 218.0
+            }
+          },
+          "Otel": {
+            "Bahsedilmemiş": {
+              "precision": 0.9230769230769231,
+              "recall": 0.9882352941176471,
+              "f1-score": 0.9545454545454546,
+              "support": 170.0
+            },
+            "Övgü": {
+              "precision": 0.6923076923076923,
+              "recall": 0.47368421052631576,
+              "f1-score": 0.5625,
+              "support": 19.0
+            },
+            "Şikayet": {
+              "precision": 0.8260869565217391,
+              "recall": 0.6551724137931034,
+              "f1-score": 0.7307692307692307,
+              "support": 29.0
+            },
+            "accuracy": 0.8990825688073395,
+            "macro avg": {
+              "precision": 0.8138238573021183,
+              "recall": 0.7056973061456887,
+              "f1-score": 0.7492715617715618,
+              "support": 218.0
+            },
+            "weighted avg": {
+              "precision": 0.8900616734681355,
+              "recall": 0.8990825688073395,
+              "f1-score": 0.8906079585552062,
+              "support": 218.0
+            }
+          },
+          "Yemek": {
+            "Bahsedilmemiş": {
+              "precision": 0.8736263736263736,
+              "recall": 0.9814814814814815,
+              "f1-score": 0.9244186046511628,
+              "support": 162.0
+            },
+            "Övgü": {
+              "precision": 0.8571428571428571,
+              "recall": 0.2727272727272727,
+              "f1-score": 0.41379310344827586,
+              "support": 22.0
+            },
+            "Şikayet": {
+              "precision": 0.7241379310344828,
+              "recall": 0.6176470588235294,
+              "f1-score": 0.6666666666666666,
+              "support": 34.0
+            },
+            "accuracy": 0.8532110091743119,
+            "macro avg": {
+              "precision": 0.8183023872679045,
+              "recall": 0.623951937677428,
+              "f1-score": 0.6682927915887018,
+              "support": 218.0
+            },
+            "weighted avg": {
+              "precision": 0.8486481882559074,
+              "recall": 0.8532110091743119,
+              "f1-score": 0.8326877472294362,
+              "support": 218.0
+            }
+          }
+        },
+        "fold": 1,
+        "train_size": 869,
+        "test_size": 218
+      },
+      {
+        "exact_match_accuracy": 0.45871559633027525,
+        "hamming_loss": 0.15137614678899083,
+        "mean_category_accuracy": 0.8486238532110091,
+        "mean_macro_f1": 0.7509107509974471,
+        "mean_weighted_f1": 0.8441609350851109,
+        "per_category_accuracy": {
+          "Ulasim": 0.8027522935779816,
+          "Rehber": 0.8027522935779816,
+          "Organizasyon": 0.8440366972477065,
+          "Otel": 0.8944954128440367,
+          "Yemek": 0.8990825688073395
+        },
+        "reports": {
+          "Ulasim": {
+            "Bahsedilmemiş": {
+              "precision": 0.8938053097345132,
+              "recall": 0.808,
+              "f1-score": 0.8487394957983193,
+              "support": 125.0
+            },
+            "Övgü": {
+              "precision": 0.6382978723404256,
+              "recall": 0.75,
+              "f1-score": 0.6896551724137931,
+              "support": 40.0
+            },
+            "Şikayet": {
+              "precision": 0.7586206896551724,
+              "recall": 0.8301886792452831,
+              "f1-score": 0.7927927927927928,
+              "support": 53.0
+            },
+            "accuracy": 0.8027522935779816,
+            "macro avg": {
+              "precision": 0.763574623910037,
+              "recall": 0.796062893081761,
+              "f1-score": 0.777062487001635,
+              "support": 218.0
+            },
+            "weighted avg": {
+              "precision": 0.8140572255144739,
+              "recall": 0.8027522935779816,
+              "f1-score": 0.8059479903181636,
+              "support": 218.0
+            }
+          },
+          "Rehber": {
+            "Bahsedilmemiş": {
+              "precision": 0.8876404494382022,
+              "recall": 0.8061224489795918,
+              "f1-score": 0.8449197860962567,
+              "support": 98.0
+            },
+            "Övgü": {
+              "precision": 0.8279569892473119,
+              "recall": 0.8279569892473119,
+              "f1-score": 0.8279569892473119,
+              "support": 93.0
+            },
+            "Şikayet": {
+              "precision": 0.5277777777777778,
+              "recall": 0.7037037037037037,
+              "f1-score": 0.6031746031746031,
+              "support": 27.0
+            },
+            "accuracy": 0.8027522935779816,
+            "macro avg": {
+              "precision": 0.7477917388210972,
+              "recall": 0.7792610473102025,
+              "f1-score": 0.7586837928393906,
+              "support": 218.0
+            },
+            "weighted avg": {
+              "precision": 0.8176090093804762,
+              "recall": 0.8027522935779816,
+              "f1-score": 0.8077424464364562,
+              "support": 218.0
+            }
+          },
+          "Organizasyon": {
+            "Bahsedilmemiş": {
+              "precision": 0.8333333333333334,
+              "recall": 0.29411764705882354,
+              "f1-score": 0.43478260869565216,
+              "support": 17.0
+            },
+            "Övgü": {
+              "precision": 0.8461538461538461,
+              "recall": 0.9,
+              "f1-score": 0.8722466960352423,
+              "support": 110.0
+            },
+            "Şikayet": {
+              "precision": 0.8421052631578947,
+              "recall": 0.8791208791208791,
+              "f1-score": 0.8602150537634409,
+              "support": 91.0
+            },
+            "accuracy": 0.8440366972477065,
+            "macro avg": {
+              "precision": 0.8405308142150248,
+              "recall": 0.6910795087265674,
+              "f1-score": 0.7224147861647784,
+              "support": 218.0
+            },
+            "weighted avg": {
+              "precision": 0.8434640765640282,
+              "recall": 0.8440366972477065,
+              "f1-score": 0.833110141303559,
+              "support": 218.0
+            }
+          },
+          "Otel": {
+            "Bahsedilmemiş": {
+              "precision": 0.9285714285714286,
+              "recall": 0.976878612716763,
+              "f1-score": 0.952112676056338,
+              "support": 173.0
+            },
+            "Övgü": {
+              "precision": 0.8125,
+              "recall": 0.5,
+              "f1-score": 0.6190476190476191,
+              "support": 26.0
+            },
+            "Şikayet": {
+              "precision": 0.65,
+              "recall": 0.6842105263157895,
+              "f1-score": 0.6666666666666666,
+              "support": 19.0
+            },
+            "accuracy": 0.8944954128440367,
+            "macro avg": {
+              "precision": 0.7970238095238096,
+              "recall": 0.7203630463441842,
+              "f1-score": 0.7459423205902079,
+              "support": 218.0
+            },
+            "weighted avg": {
+              "precision": 0.8904488859764089,
+              "recall": 0.8944954128440367,
+              "f1-score": 0.8875109987139965,
+              "support": 218.0
+            }
+          },
+          "Yemek": {
+            "Bahsedilmemiş": {
+              "precision": 0.9090909090909091,
+              "recall": 0.9941520467836257,
+              "f1-score": 0.9497206703910615,
+              "support": 171.0
+            },
+            "Övgü": {
+              "precision": 0.9,
+              "recall": 0.4090909090909091,
+              "f1-score": 0.5625,
+              "support": 22.0
+            },
+            "Şikayet": {
+              "precision": 0.8095238095238095,
+              "recall": 0.68,
+              "f1-score": 0.7391304347826086,
+              "support": 25.0
+            },
+            "accuracy": 0.8990825688073395,
+            "macro avg": {
+              "precision": 0.8728715728715729,
+              "recall": 0.6944143186248449,
+              "f1-score": 0.7504503683912235,
+              "support": 218.0
+            },
+            "weighted avg": {
+              "precision": 0.8967552325350491,
+              "recall": 0.8990825688073395,
+              "f1-score": 0.8864930986533794,
+              "support": 218.0
+            }
+          }
+        },
+        "fold": 2,
+        "train_size": 869,
+        "test_size": 218
+      },
+      {
+        "exact_match_accuracy": 0.42857142857142855,
+        "hamming_loss": 0.17880184331797236,
+        "mean_category_accuracy": 0.8211981566820276,
+        "mean_macro_f1": 0.6969837909081573,
+        "mean_weighted_f1": 0.8101892902421237,
+        "per_category_accuracy": {
+          "Ulasim": 0.7926267281105991,
+          "Rehber": 0.783410138248848,
+          "Organizasyon": 0.8294930875576036,
+          "Otel": 0.8294930875576036,
+          "Yemek": 0.8709677419354839
+        },
+        "reports": {
+          "Ulasim": {
+            "Bahsedilmemiş": {
+              "precision": 0.8585858585858586,
+              "recall": 0.8095238095238095,
+              "f1-score": 0.8333333333333334,
+              "support": 105.0
+            },
+            "Övgü": {
+              "precision": 0.8085106382978723,
+              "recall": 0.6785714285714286,
+              "f1-score": 0.7378640776699029,
+              "support": 56.0
+            },
+            "Şikayet": {
+              "precision": 0.6901408450704225,
+              "recall": 0.875,
+              "f1-score": 0.7716535433070866,
+              "support": 56.0
+            },
+            "accuracy": 0.7926267281105991,
+            "macro avg": {
+              "precision": 0.7857457806513845,
+              "recall": 0.7876984126984127,
+              "f1-score": 0.7809503181034408,
+              "support": 217.0
+            },
+            "weighted avg": {
+              "precision": 0.8021935401849756,
+              "recall": 0.7926267281105991,
+              "f1-score": 0.7927787408972875,
+              "support": 217.0
+            }
+          },
+          "Rehber": {
+            "Bahsedilmemiş": {
+              "precision": 0.8461538461538461,
+              "recall": 0.7951807228915663,
+              "f1-score": 0.8198757763975155,
+              "support": 83.0
+            },
+            "Övgü": {
+              "precision": 0.8,
+              "recall": 0.8260869565217391,
+              "f1-score": 0.8128342245989305,
+              "support": 92.0
+            },
+            "Şikayet": {
+              "precision": 0.6363636363636364,
+              "recall": 0.6666666666666666,
+              "f1-score": 0.6511627906976745,
+              "support": 42.0
+            },
+            "accuracy": 0.783410138248848,
+            "macro avg": {
+              "precision": 0.7608391608391608,
+              "recall": 0.7626447820266574,
+              "f1-score": 0.7612909305647069,
+              "support": 217.0
+            },
+            "weighted avg": {
+              "precision": 0.7859817601753086,
+              "recall": 0.783410138248848,
+              "f1-score": 0.7842362917668098,
+              "support": 217.0
+            }
+          },
+          "Organizasyon": {
+            "Bahsedilmemiş": {
+              "precision": 0.5,
+              "recall": 0.0625,
+              "f1-score": 0.1111111111111111,
+              "support": 16.0
+            },
+            "Övgü": {
+              "precision": 0.8207547169811321,
+              "recall": 0.87,
+              "f1-score": 0.8446601941747572,
+              "support": 100.0
+            },
+            "Şikayet": {
+              "precision": 0.8440366972477065,
+              "recall": 0.9108910891089109,
+              "f1-score": 0.8761904761904762,
+              "support": 101.0
+            },
+            "accuracy": 0.8294930875576036,
+            "macro avg": {
+              "precision": 0.7215971380762797,
+              "recall": 0.6144636963696369,
+              "f1-score": 0.6106539271587815,
+              "support": 217.0
+            },
+            "weighted avg": {
+              "precision": 0.807940912995998,
+              "recall": 0.8294930875576036,
+              "f1-score": 0.8052490105552608,
+              "support": 217.0
+            }
+          },
+          "Otel": {
+            "Bahsedilmemiş": {
+              "precision": 0.8604651162790697,
+              "recall": 0.9548387096774194,
+              "f1-score": 0.9051987767584098,
+              "support": 155.0
+            },
+            "Övgü": {
+              "precision": 0.7857142857142857,
+              "recall": 0.3793103448275862,
+              "f1-score": 0.5116279069767442,
+              "support": 29.0
+            },
+            "Şikayet": {
+              "precision": 0.6774193548387096,
+              "recall": 0.6363636363636364,
+              "f1-score": 0.65625,
+              "support": 33.0
+            },
+            "accuracy": 0.8294930875576036,
+            "macro avg": {
+              "precision": 0.7745329189440217,
+              "recall": 0.6568375636228806,
+              "f1-score": 0.6910255612450514,
+              "support": 217.0
+            },
+            "weighted avg": {
+              "precision": 0.8226389217449194,
+              "recall": 0.8294930875576036,
+              "f1-score": 0.8147431783404566,
+              "support": 217.0
+            }
+          },
+          "Yemek": {
+            "Bahsedilmemiş": {
+              "precision": 0.9032258064516129,
+              "recall": 0.9824561403508771,
+              "f1-score": 0.9411764705882353,
+              "support": 171.0
+            },
+            "Övgü": {
+              "precision": 0.6666666666666666,
+              "recall": 0.25,
+              "f1-score": 0.36363636363636365,
+              "support": 16.0
+            },
+            "Şikayet": {
+              "precision": 0.68,
+              "recall": 0.5666666666666667,
+              "f1-score": 0.6181818181818182,
+              "support": 30.0
+            },
+            "accuracy": 0.8709677419354839,
+            "macro avg": {
+              "precision": 0.7499641577060933,
+              "recall": 0.5997076023391813,
+              "f1-score": 0.6409982174688057,
+              "support": 217.0
+            },
+            "weighted avg": {
+              "precision": 0.8549229473266934,
+              "recall": 0.8709677419354839,
+              "f1-score": 0.8539392296508046,
+              "support": 217.0
+            }
+          }
+        },
+        "fold": 3,
+        "train_size": 870,
+        "test_size": 217
+      },
+      {
+        "exact_match_accuracy": 0.3824884792626728,
+        "hamming_loss": 0.16129032258064516,
+        "mean_category_accuracy": 0.8387096774193548,
+        "mean_macro_f1": 0.7418011092241924,
+        "mean_weighted_f1": 0.8315631531345303,
+        "per_category_accuracy": {
+          "Ulasim": 0.7926267281105991,
+          "Rehber": 0.8064516129032258,
+          "Organizasyon": 0.8663594470046083,
+          "Otel": 0.8387096774193549,
+          "Yemek": 0.8894009216589862
+        },
+        "reports": {
+          "Ulasim": {
+            "Bahsedilmemiş": {
+              "precision": 0.8677685950413223,
+              "recall": 0.8536585365853658,
+              "f1-score": 0.860655737704918,
+              "support": 123.0
+            },
+            "Övgü": {
+              "precision": 0.723404255319149,
+              "recall": 0.6538461538461539,
+              "f1-score": 0.6868686868686869,
+              "support": 52.0
+            },
+            "Şikayet": {
+              "precision": 0.673469387755102,
+              "recall": 0.7857142857142857,
+              "f1-score": 0.7252747252747253,
+              "support": 42.0
+            },
+            "accuracy": 0.7926267281105991,
+            "macro avg": {
+              "precision": 0.7548807460385244,
+              "recall": 0.7644063253819352,
+              "f1-score": 0.75759971661611,
+              "support": 217.0
+            },
+            "weighted avg": {
+              "precision": 0.7955680771999661,
+              "recall": 0.7926267281105991,
+              "f1-score": 0.792808137863664,
+              "support": 217.0
+            }
+          },
+          "Rehber": {
+            "Bahsedilmemiş": {
+              "precision": 0.8076923076923077,
+              "recall": 0.8076923076923077,
+              "f1-score": 0.8076923076923077,
+              "support": 78.0
+            },
+            "Övgü": {
+              "precision": 0.8653846153846154,
+              "recall": 0.8737864077669902,
+              "f1-score": 0.8695652173913043,
+              "support": 103.0
+            },
+            "Şikayet": {
+              "precision": 0.6285714285714286,
+              "recall": 0.6111111111111112,
+              "f1-score": 0.6197183098591549,
+              "support": 36.0
+            },
+            "accuracy": 0.8064516129032258,
+            "macro avg": {
+              "precision": 0.7672161172161172,
+              "recall": 0.764196608856803,
+              "f1-score": 0.7656586116475891,
+              "support": 217.0
+            },
+            "weighted avg": {
+              "precision": 0.8053603078948701,
+              "recall": 0.8064516129032258,
+              "f1-score": 0.8058759287844881,
+              "support": 217.0
+            }
+          },
+          "Organizasyon": {
+            "Bahsedilmemiş": {
+              "precision": 1.0,
+              "recall": 0.3684210526315789,
+              "f1-score": 0.5384615384615384,
+              "support": 19.0
+            },
+            "Övgü": {
+              "precision": 0.8532110091743119,
+              "recall": 0.9029126213592233,
+              "f1-score": 0.8773584905660378,
+              "support": 103.0
+            },
+            "Şikayet": {
+              "precision": 0.8712871287128713,
+              "recall": 0.9263157894736842,
+              "f1-score": 0.8979591836734694,
+              "support": 95.0
+            },
+            "accuracy": 0.8663594470046083,
+            "macro avg": {
+              "precision": 0.9081660459623944,
+              "recall": 0.7325498211548288,
+              "f1-score": 0.7712597375670152,
+              "support": 217.0
+            },
+            "weighted avg": {
+              "precision": 0.8739770100123359,
+              "recall": 0.8663594470046083,
+              "f1-score": 0.8567042221569157,
+              "support": 217.0
+            }
+          },
+          "Otel": {
+            "Bahsedilmemiş": {
+              "precision": 0.8562874251497006,
+              "recall": 0.9727891156462585,
+              "f1-score": 0.910828025477707,
+              "support": 147.0
+            },
+            "Övgü": {
+              "precision": 0.6818181818181818,
+              "recall": 0.5357142857142857,
+              "f1-score": 0.6,
+              "support": 28.0
+            },
+            "Şikayet": {
+              "precision": 0.8571428571428571,
+              "recall": 0.5714285714285714,
+              "f1-score": 0.6857142857142857,
+              "support": 42.0
+            },
+            "accuracy": 0.8387096774193549,
+            "macro avg": {
+              "precision": 0.7984161547035799,
+              "recall": 0.6933106575963718,
+              "f1-score": 0.732180770397331,
+              "support": 217.0
+            },
+            "weighted avg": {
+              "precision": 0.8339408322023736,
+              "recall": 0.8387096774193549,
+              "f1-score": 0.8271507822360504,
+              "support": 217.0
+            }
+          },
+          "Yemek": {
+            "Bahsedilmemiş": {
+              "precision": 0.9281767955801105,
+              "recall": 0.9882352941176471,
+              "f1-score": 0.9572649572649573,
+              "support": 170.0
+            },
+            "Övgü": {
+              "precision": 0.7142857142857143,
+              "recall": 0.2777777777777778,
+              "f1-score": 0.4,
+              "support": 18.0
+            },
+            "Şikayet": {
+              "precision": 0.6896551724137931,
+              "recall": 0.6896551724137931,
+              "f1-score": 0.6896551724137931,
+              "support": 29.0
+            },
+            "accuracy": 0.8894009216589862,
+            "macro avg": {
+              "precision": 0.7773725607598726,
+              "recall": 0.6518894147697393,
+              "f1-score": 0.6823067098929169,
+              "support": 217.0
+            },
+            "weighted avg": {
+              "precision": 0.8785585166164132,
+              "recall": 0.8894009216589862,
+              "f1-score": 0.8752766946315333,
+              "support": 217.0
+            }
+          }
+        },
+        "fold": 4,
+        "train_size": 870,
+        "test_size": 217
+      },
+      {
+        "exact_match_accuracy": 0.4377880184331797,
+        "hamming_loss": 0.1631336405529954,
+        "mean_category_accuracy": 0.8368663594470046,
+        "mean_macro_f1": 0.7185283001979383,
+        "mean_weighted_f1": 0.8253459089731059,
+        "per_category_accuracy": {
+          "Ulasim": 0.8064516129032258,
+          "Rehber": 0.8018433179723502,
+          "Organizasyon": 0.8433179723502304,
+          "Otel": 0.8847926267281107,
+          "Yemek": 0.847926267281106
+        },
+        "reports": {
+          "Ulasim": {
+            "Bahsedilmemiş": {
+              "precision": 0.7983193277310925,
+              "recall": 0.8878504672897196,
+              "f1-score": 0.8407079646017699,
+              "support": 107.0
+            },
+            "Övgü": {
+              "precision": 0.7777777777777778,
+              "recall": 0.7608695652173914,
+              "f1-score": 0.7692307692307693,
+              "support": 46.0
+            },
+            "Şikayet": {
+              "precision": 0.8490566037735849,
+              "recall": 0.703125,
+              "f1-score": 0.7692307692307693,
+              "support": 64.0
+            },
+            "accuracy": 0.8064516129032258,
+            "macro avg": {
+              "precision": 0.8083845697608184,
+              "recall": 0.7839483441690369,
+              "f1-score": 0.7930565010211028,
+              "support": 217.0
+            },
+            "weighted avg": {
+              "precision": 0.8089288870346273,
+              "recall": 0.8064516129032258,
+              "f1-score": 0.8044752849206176,
+              "support": 217.0
+            }
+          },
+          "Rehber": {
+            "Bahsedilmemiş": {
+              "precision": 0.8928571428571429,
+              "recall": 0.8241758241758241,
+              "f1-score": 0.8571428571428571,
+              "support": 91.0
+            },
+            "Övgü": {
+              "precision": 0.75,
+              "recall": 0.8928571428571429,
+              "f1-score": 0.8152173913043478,
+              "support": 84.0
+            },
+            "Şikayet": {
+              "precision": 0.7272727272727273,
+              "recall": 0.5714285714285714,
+              "f1-score": 0.64,
+              "support": 42.0
+            },
+            "accuracy": 0.8018433179723502,
+            "macro avg": {
+              "precision": 0.79004329004329,
+              "recall": 0.7628205128205128,
+              "f1-score": 0.7707867494824017,
+              "support": 217.0
+            },
+            "weighted avg": {
+              "precision": 0.8055090071219104,
+              "recall": 0.8018433179723502,
+              "f1-score": 0.798885994790623,
+              "support": 217.0
+            }
+          },
+          "Organizasyon": {
+            "Bahsedilmemiş": {
+              "precision": 0.8,
+              "recall": 0.25,
+              "f1-score": 0.38095238095238093,
+              "support": 16.0
+            },
+            "Övgü": {
+              "precision": 0.8518518518518519,
+              "recall": 0.8846153846153846,
+              "f1-score": 0.8679245283018868,
+              "support": 104.0
+            },
+            "Şikayet": {
+              "precision": 0.8365384615384616,
+              "recall": 0.8969072164948454,
+              "f1-score": 0.8656716417910447,
+              "support": 97.0
+            },
+            "accuracy": 0.8433179723502304,
+            "macro avg": {
+              "precision": 0.8294634377967712,
+              "recall": 0.6771742003700766,
+              "f1-score": 0.7048495170151042,
+              "support": 217.0
+            },
+            "weighted avg": {
+              "precision": 0.8411835177964211,
+              "recall": 0.8433179723502304,
+              "f1-score": 0.8310116971998418,
+              "support": 217.0
+            }
+          },
+          "Otel": {
+            "Bahsedilmemiş": {
+              "precision": 0.9166666666666666,
+              "recall": 0.9880239520958084,
+              "f1-score": 0.9510086455331412,
+              "support": 167.0
+            },
+            "Övgü": {
+              "precision": 0.8571428571428571,
+              "recall": 0.42857142857142855,
+              "f1-score": 0.5714285714285714,
+              "support": 28.0
+            },
+            "Şikayet": {
+              "precision": 0.6521739130434783,
+              "recall": 0.6818181818181818,
+              "f1-score": 0.6666666666666666,
+              "support": 22.0
+            },
+            "accuracy": 0.8847926267281107,
+            "macro avg": {
+              "precision": 0.8086611456176674,
+              "recall": 0.6994711874951395,
+              "f1-score": 0.7297012945427931,
+              "support": 217.0
+            },
+            "weighted avg": {
+              "precision": 0.882171241568156,
+              "recall": 0.8847926267281107,
+              "f1-score": 0.873203274058531,
+              "support": 217.0
+            }
+          },
+          "Yemek": {
+            "Bahsedilmemiş": {
+              "precision": 0.8691099476439791,
+              "recall": 0.9822485207100592,
+              "f1-score": 0.9222222222222223,
+              "support": 169.0
+            },
+            "Övgü": {
+              "precision": 0.5,
+              "recall": 0.14285714285714285,
+              "f1-score": 0.2222222222222222,
+              "support": 21.0
+            },
+            "Şikayet": {
+              "precision": 0.75,
+              "recall": 0.5555555555555556,
+              "f1-score": 0.6382978723404256,
+              "support": 27.0
+            },
+            "accuracy": 0.847926267281106,
+            "macro avg": {
+              "precision": 0.7063699825479931,
+              "recall": 0.5602204063742525,
+              "f1-score": 0.59424743892829,
+              "support": 217.0
+            },
+            "weighted avg": {
+              "precision": 0.8185694983955414,
+              "recall": 0.847926267281106,
+              "f1-score": 0.8191532938959157,
+              "support": 217.0
+            }
+          }
+        },
+        "fold": 5,
+        "train_size": 870,
+        "test_size": 217
+      }
+    ]
+  }
+}

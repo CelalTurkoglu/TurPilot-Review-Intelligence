@@ -1,9 +1,11 @@
+import argparse
 import csv
 import importlib
 import random
 import re
 import subprocess
 import time
+import unicodedata
 from pathlib import Path
 
 import pandas as pd
@@ -39,19 +41,145 @@ GOOGLE_REVIEW_LINKS = [
         "https://www.google.com/search?q=bursa+turizm+acentesi&num=10&sca_esv=8c24cb2666462953&hl=tr-TR&biw=1470&bih=801&tbm=lcl&sxsrf=ANbL-n7dHueiTrgRkq3Ye3Z1yHYVw2gkKg%3A1777931882877&ei=ahb5abShNa2Vxc8Px7_LmQI#lkt=LocalPoiReviews&rlfi=hd:;si:8255094751721711918,l,ChVidXJzYSB0dXJpem0gYWNlbnRlc2lI0f2Ums-5gIAIWh8QARACGAAYASIVYnVyc2EgdHVyaXptIGFjZW50ZXNpkgENdHJhdmVsX2FnZW5jeZoBI0NoWkRTVWhOTUc5blMwVkpRMEZuU1VRM2VXTjJkMHRCRUFF-gEECAAQRw;mv:[[40.2568571,29.075424199999997],[40.1781903,28.833067000000003]]",
 ]
 
-OUTPUT_FILE = Path(__file__).resolve().parent / "dataset.csv"
-DEBUG_DIR = Path(__file__).resolve().parent / "debug"
+BASE_DIR = Path(__file__).resolve().parent
+OUTPUT_FILE = BASE_DIR / "dataset.csv"
+SCRAPED_OUTPUT_FILE = BASE_DIR / "scraped_reviews_latest.csv"
+LINKS_FILE = BASE_DIR / "linkler.txt"
+DEBUG_DIR = BASE_DIR / "debug"
 USE_UNDETECTED_CHROME = False
 TARGET_PER_STAR = 10
+PAGE_LOAD_TIMEOUT = 45
+MAX_SCROLLS_PER_SORT = 120
+DELAY_SCALE = 1.0
 STAR_VALUES = [1, 2, 3, 4, 5]
 LOW_STAR_VALUES = [1, 2, 3]
 LOW_SORT_STAR_VALUES = [1, 2, 3, 4]
 HIGH_STAR_VALUES = [5, 4]
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description=(
+            "Google yorumlarini toplar, yeni cekimleri ayri kaydeder ve "
+            "isterseniz mevcut dataset.csv ile dedupe ederek birlestirir."
+        )
+    )
+    parser.add_argument(
+        "--links-file",
+        type=Path,
+        default=LINKS_FILE,
+        help="Her satirda veya boslukla ayrilmis Google yorum linkleri iceren dosya.",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=OUTPUT_FILE,
+        help="Birlesik ham veri setinin kaydedilecegi CSV.",
+    )
+    parser.add_argument(
+        "--scraped-output",
+        type=Path,
+        default=SCRAPED_OUTPUT_FILE,
+        help="Sadece bu calismada cekilen yorumlarin kaydedilecegi CSV.",
+    )
+    parser.add_argument(
+        "--target-per-star",
+        type=int,
+        default=TARGET_PER_STAR,
+        help="Her isletme ve her yildiz seviyesi icin hedef yorum sayisi.",
+    )
+    parser.add_argument(
+        "--headless",
+        action="store_true",
+        help="Chrome'u headless modda calistirir. Google daha sik engelleyebilir.",
+    )
+    parser.add_argument(
+        "--use-undetected-chrome",
+        action="store_true",
+        help="Kuruluysa undetected-chromedriver kullanmayi dener.",
+    )
+    parser.add_argument(
+        "--page-load-timeout",
+        type=int,
+        default=PAGE_LOAD_TIMEOUT,
+        help="Google sayfasi yukleme zaman asimi, saniye.",
+    )
+    parser.add_argument(
+        "--max-scrolls",
+        type=int,
+        default=MAX_SCROLLS_PER_SORT,
+        help="Her siralama turu icin maksimum yorum paneli kaydirma sayisi.",
+    )
+    parser.add_argument(
+        "--max-links",
+        type=int,
+        default=None,
+        help="Test veya parcali scraping icin ilk N linki isler.",
+    )
+    parser.add_argument(
+        "--delay-scale",
+        type=float,
+        default=DELAY_SCALE,
+        help="Bekleme surelerini carpar. 1.0 insan benzeri, 0.3 daha hizli test.",
+    )
+    parser.add_argument(
+        "--no-merge-existing",
+        action="store_true",
+        help="Mevcut dataset.csv ile birlestirmek yerine sadece yeni cekimleri output'a yazar.",
+    )
+    return parser.parse_args()
+
+
+def load_review_links(links_file):
+    """linkler.txt varsa onu okur; yoksa geriye uyumluluk icin sabit listeyi kullanir."""
+    if links_file and links_file.exists():
+        text = links_file.read_text(encoding="utf-8")
+        links = [match.rstrip(" \t\r\n") for match in re.findall(r"https?://\S+", text)]
+        unique_links = list(dict.fromkeys(links))
+        if unique_links:
+            print(f"{len(unique_links)} link okundu: {links_file}")
+            return unique_links
+
+    print("linkler.txt bulunamadi veya bos; kod icindeki GOOGLE_REVIEW_LINKS kullaniliyor.")
+    return GOOGLE_REVIEW_LINKS
+
+
+def normalize_review_for_dedupe(text):
+    """Ayni yorumun kucuk yazim/fazladan bosluk farklariyla tekrarini yakalar."""
+    normalized = "" if pd.isna(text) else str(text)
+    normalized = unicodedata.normalize("NFKC", normalized)
+    normalized = normalized.casefold()
+    normalized = re.sub(r"\s+", " ", normalized).strip()
+    return normalized
+
+
+def deduplicate_rows(df):
+    """Tekrarlanan yorumlari metin bazinda temizler."""
+    if df.empty:
+        return df
+
+    cleaned_df = df.copy()
+    cleaned_df["Yorum"] = cleaned_df["Yorum"].fillna("").astype(str).str.strip()
+    cleaned_df["Yildiz"] = pd.to_numeric(cleaned_df["Yildiz"], errors="coerce").fillna(3).astype(int)
+    cleaned_df["Yildiz"] = cleaned_df["Yildiz"].clip(lower=1, upper=5)
+    cleaned_df = cleaned_df[cleaned_df["Yorum"].str.len() > 0].copy()
+    cleaned_df["_dedupe_key"] = cleaned_df["Yorum"].map(normalize_review_for_dedupe)
+    cleaned_df = cleaned_df.drop_duplicates(subset=["_dedupe_key"], keep="first")
+    return cleaned_df.drop(columns=["_dedupe_key"]).reset_index(drop=True)
+
+
+def load_existing_dataset(path):
+    if not path.exists():
+        return pd.DataFrame(columns=["Yorum", "Yildiz"])
+
+    return pd.read_csv(path, encoding="utf-8-sig", usecols=["Yorum", "Yildiz"])
+
+
 def human_sleep(min_seconds=1.0, max_seconds=3.0):
     """Google tarafinda bot davranisini azaltmak icin rastgele bekler."""
-    time.sleep(random.uniform(min_seconds, max_seconds))
+    scaled_min = max(0.05, min_seconds * DELAY_SCALE)
+    scaled_max = max(scaled_min, max_seconds * DELAY_SCALE)
+    time.sleep(random.uniform(scaled_min, scaled_max))
 
 
 def load_undetected_chromedriver():
@@ -91,7 +219,13 @@ def get_chrome_major_version():
     return None
 
 
-def build_driver(use_undetected=USE_UNDETECTED_CHROME, headless=False):
+def configure_driver(driver, page_load_timeout=PAGE_LOAD_TIMEOUT):
+    """Apply common runtime settings after Chrome starts."""
+    driver.set_page_load_timeout(page_load_timeout)
+    return driver
+
+
+def build_driver(use_undetected=USE_UNDETECTED_CHROME, headless=False, page_load_timeout=PAGE_LOAD_TIMEOUT):
     """Varsayilan olarak standart Selenium Chrome'u baslatir."""
     options = Options()
     options.add_argument("--start-maximized")
@@ -109,16 +243,19 @@ def build_driver(use_undetected=USE_UNDETECTED_CHROME, headless=False):
         try:
             if chrome_major_version:
                 print(f"Chrome surumu algilandi: {chrome_major_version}")
-                return uc.Chrome(options=options, version_main=chrome_major_version)
+                return configure_driver(
+                    uc.Chrome(options=options, version_main=chrome_major_version),
+                    page_load_timeout,
+                )
 
-            return uc.Chrome(options=options)
+            return configure_driver(uc.Chrome(options=options), page_load_timeout)
         except SessionNotCreatedException as exc:
             print(f"undetected-chromedriver baslatilamadi, standart Selenium deneniyor: {exc.msg}")
         except WebDriverException as exc:
             print(f"undetected-chromedriver hatasi, standart Selenium deneniyor: {exc.msg}")
 
     print("Standart Selenium Chrome baslatiliyor.")
-    return Chrome(options=options)
+    return configure_driver(Chrome(options=options), page_load_timeout)
 
 
 def is_driver_alive(driver):
@@ -819,13 +956,14 @@ def dump_debug_snapshot(driver, label):
         print(f"Debug kaydi olusturulamadi: {exc}")
 
 
-def collect_reviews_for_stars(driver, collected_by_star, target_stars, max_scrolls=120):
+def collect_reviews_for_stars(driver, collected_by_star, target_stars, max_scrolls=None):
     """
     Istenen yildizlar icin sirali sekilde kaydirir.
     1 yildiz dolduktan sonra 2 yildiza, 5 yildiz dolduktan sonra 4 yildiza
     ulasana kadar erken durmaz.
     """
     scroll_container = find_scrollable_reviews_container(driver)
+    max_scrolls = MAX_SCROLLS_PER_SORT if max_scrolls is None else max_scrolls
     skipped_stars = set()
     passed_star_scrolls = {star: 0 for star in target_stars}
     no_movement_scrolls = 0
@@ -924,41 +1062,87 @@ def scrape_single_business(driver, review_url):
     return rows
 
 
-def save_dataset(rows):
+def save_dataset(rows, output_path):
     """Yorumlari cift tirnakli CSV olarak UTF-8 BOM ile kaydeder."""
-    df = pd.DataFrame(rows, columns=["Yorum", "Yildiz"])
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    df = deduplicate_rows(pd.DataFrame(rows, columns=["Yorum", "Yildiz"]))
     df.to_csv(
-        OUTPUT_FILE,
+        output_path,
         index=False,
         encoding="utf-8-sig",
         quoting=csv.QUOTE_ALL,
     )
-    print(f"\nKaydedildi: {OUTPUT_FILE} ({len(df)} satir)")
+    print(f"\nKaydedildi: {output_path} ({len(df)} satir)")
+
+
+def merge_with_existing_dataset(existing_path, scraped_rows, output_path):
+    """Yeni scraping ciktisini mevcut ham veriyle guvenli sekilde birlestirir."""
+    existing_df = load_existing_dataset(existing_path)
+    scraped_df = pd.DataFrame(scraped_rows, columns=["Yorum", "Yildiz"])
+    merged_df = deduplicate_rows(pd.concat([existing_df, scraped_df], ignore_index=True))
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    merged_df.to_csv(
+        output_path,
+        index=False,
+        encoding="utf-8-sig",
+        quoting=csv.QUOTE_ALL,
+    )
+
+    removed_duplicates = len(existing_df) + len(scraped_df) - len(merged_df)
+    print(
+        "\nBirlesik veri kaydedildi: "
+        f"{output_path} ({len(existing_df)} eski + {len(scraped_df)} yeni -> "
+        f"{len(merged_df)} tekil satir, {removed_duplicates} tekrar temizlendi)"
+    )
 
 
 def main():
-    if not GOOGLE_REVIEW_LINKS:
+    args = parse_args()
+    global TARGET_PER_STAR, MAX_SCROLLS_PER_SORT, DELAY_SCALE
+    TARGET_PER_STAR = max(1, int(args.target_per_star))
+    MAX_SCROLLS_PER_SORT = max(1, int(args.max_scrolls))
+    DELAY_SCALE = max(0.05, float(args.delay_scale))
+    page_load_timeout = max(10, int(args.page_load_timeout))
+
+    review_links = load_review_links(args.links_file)
+    if args.max_links:
+        review_links = review_links[: max(1, int(args.max_links))]
+        print(f"Ilk {len(review_links)} link islenecek (--max-links).")
+    if not review_links:
         print("GOOGLE_REVIEW_LINKS listesine en az bir Google yorum linki ekleyin.")
         return
 
     all_rows = []
-    driver = build_driver(headless=False)
+    driver = build_driver(
+        use_undetected=args.use_undetected_chrome,
+        headless=args.headless,
+        page_load_timeout=page_load_timeout,
+    )
 
     try:
-        for review_url in GOOGLE_REVIEW_LINKS:
+        for review_url in review_links:
             if not is_driver_alive(driver):
                 print("Chrome penceresi kapandi; yeni Chrome oturumu aciliyor.")
-                driver = build_driver(headless=False)
+                driver = build_driver(
+                    use_undetected=args.use_undetected_chrome,
+                    headless=args.headless,
+                    page_load_timeout=page_load_timeout,
+                )
 
             business_rows = scrape_single_business(driver, review_url)
             all_rows.extend(business_rows)
-            save_dataset(all_rows)
+            save_dataset(all_rows, args.scraped_output)
             human_sleep(3, 6)
     finally:
         if is_driver_alive(driver):
             driver.quit()
 
-    save_dataset(all_rows)
+    save_dataset(all_rows, args.scraped_output)
+    if args.no_merge_existing:
+        save_dataset(all_rows, args.output)
+    else:
+        merge_with_existing_dataset(args.output, all_rows, args.output)
 
 
 if __name__ == "__main__":

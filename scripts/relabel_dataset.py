@@ -14,6 +14,7 @@ Label meaning:
 from __future__ import annotations
 
 import re
+import unicodedata
 from pathlib import Path
 
 import pandas as pd
@@ -25,6 +26,168 @@ MODEL_DATASET_PATH = PROJECT_ROOT / "model" / "updated_dataset.csv"
 SCRAPING_DATASET_PATH = PROJECT_ROOT / "web_scraping" / "updated_dataset.csv"
 
 TARGET_COLUMNS = ["Ulasim", "Rehber", "Organizasyon", "Otel", "Yemek"]
+
+
+MANUAL_NEW_REVIEW_AUDIT_OVERRIDES: list[tuple[int, str, tuple[int, int, int, int, int]]] = [
+    # idx, stable text snippet, labels in TARGET_COLUMNS order.
+    (336, "gezi için tahsis edilen otobüsün", (2, 1, 1, 0, 0)),
+    (337, "4-7 aralık gap turu aksiliklerle dolu geçti", (1, 2, 2, 2, 0)),
+    (338, "2 günluk erciyes tatiline gittik", (2, 1, 2, 2, 2)),
+    (341, "4-7 aralık gap turunda o kadar çok rezillik", (0, 2, 2, 2, 0)),
+    (343, "2 gece 3 günlük büyük bir hesevle", (0, 2, 2, 2, 0)),
+    (345, "öncelikle adrasan turu düşünenler için", (0, 2, 2, 2, 2)),
+    (347, "katılmış olduğum düzce şelaleleri turunun detaylarına", (2, 2, 2, 0, 1)),
+    (351, "merhaba ben 17 eylül gap turu için", (0, 2, 2, 0, 0)),
+    (352, "ankara gezi travel ile ilk kez tur deneyimimiz", (2, 1, 2, 0, 1)),
+    (356, "destinasyonu (tercih ettiği oteller", (2, 0, 2, 2, 2)),
+    (358, "rehberimiz iyiydi. ilk gün kahvaltı çok kötüydü", (2, 1, 0, 0, 2)),
+    (361, "rehberimiz iyiydi, sabah kahvaltı yapılan yer", (2, 1, 2, 0, 2)),
+    (363, "7 sene önce başka bir tur ile konaklamalı", (2, 1, 2, 0, 0)),
+    (364, "gap turuna 3 arkadaşım ve ben katıldık", (0, 2, 2, 2, 0)),
+    (365, "16 ağustos 2025 adrasan turuna katıldım", (0, 1, 1, 2, 0)),
+    (367, "merhaba bugün gezi travel ailesiyle düzce şelaleleri", (0, 1, 1, 0, 1)),
+    (369, "19 eylül'de günübirlik istanbul turuna katıldık", (2, 2, 1, 0, 0)),
+    (373, "antalya, kanyonlar, ormana evleri turuna katıldım", (0, 1, 1, 2, 0)),
+    (374, "19 eylül'de günübirlik istanbul turuna katıldık", (2, 2, 2, 0, 1)),
+    (375, "1-5 ekim gap turuna katıldık acente sorumlusu", (0, 1, 1, 2, 0)),
+    (384, "24 ocak cumartesi günü günübirlik ilgaz turuna", (0, 0, 1, 0, 1)),
+    (387, "erciyes turuna katıldık, temel eğitim alacağımızı", (0, 2, 2, 0, 0)),
+    (389, "tur rehberlerinin nezaketi için 1 puan veriyorum", (0, 1, 2, 2, 0)),
+    (391, "ben hiç memnun kalmadım her durulan restoran", (2, 0, 2, 0, 2)),
+    (392, "afytos otelin önüne kadar bırakmadılar", (2, 2, 2, 0, 0)),
+    (394, "güzel olumlu yorumlara aldandık fakat ankara batum", (2, 0, 2, 0, 0)),
+    (396, "tatilbo turizm ile günübirlik erciyes kayak turuna", (2, 1, 1, 0, 0)),
+    (400, "otobüsler çok dar, eski ve kalabalık oluyor", (2, 0, 2, 0, 0)),
+    (401, "hizmetleri berbattı ama anlaşma yaptıkları oteli", (0, 0, 2, 1, 0)),
+    (404, "genel olarak keyifli diyebileceğim bir tur deneyimiydi", (0, 1, 2, 0, 0)),
+    (407, "tatilbo turizmin iki günlük erciyes turu'na", (0, 1, 2, 1, 0)),
+    (408, "diger turlardan farklı olarak aman aman bi turmu", (0, 0, 2, 2, 2)),
+    (409, "yılbaşı için eşimle erciyes kayak turuna geldik", (0, 0, 2, 0, 0)),
+    (410, "gittiğimiz otel iyiydi, güler yüzlülerdi", (0, 1, 2, 1, 0)),
+    (411, "kayak merkezinde yemek içecek çok kötü", (1, 1, 2, 0, 2)),
+    (414, "geçen sene çok memnun kaldığımız için bu sene", (0, 1, 2, 1, 0)),
+    (416, "turumuz genel anlamda gayet güzeldi sadece otel", (1, 1, 1, 2, 0)),
+    (417, "genel olarak turla ve rehberimiz ahmet bey ile", (0, 1, 2, 1, 2)),
+    (420, "ankara çıkışlı 2 gece 2gün erciyes", (0, 1, 1, 1, 1)),
+    (421, "günübirlik erciyes kayak turuna katıldım", (2, 0, 1, 0, 0)),
+    (422, "2 gece 2 gün erciyes turuna katıldık", (0, 1, 1, 1, 0)),
+    (424, "2 gece 2 gün erciyes kayak tatiline gittim", (0, 1, 1, 1, 1)),
+    (471, "15-17 aralık kapadokya- konya turuna", (0, 1, 1, 1, 0)),
+    (480, "bir puanı rehber 'e veriyorum", (2, 1, 2, 0, 0)),
+    (490, "agonya bursa travel ile 17 haziran istanbul kültür", (0, 2, 2, 0, 2)),
+    (491, "20 ağustos ayvalık tekne turuna katıldık", (0, 1, 2, 0, 2)),
+    (497, "ormanya - maşukiye - sapanca turuna katıldım", (0, 2, 2, 0, 2)),
+    (533, "erzurum firması soğuk koşulları biliyorlardır", (2, 2, 2, 2, 0)),
+    (561, "merhaba, 17 mayıs kapodokya turuna katıldım", (0, 2, 1, 1, 0)),
+    (571, "van-kars-erzurum turuna 11.02.-15.02.26", (0, 1, 1, 0, 0)),
+    (586, "eşimle birlikte 11-15 kasım 2025 karahan", (1, 1, 1, 1, 1)),
+    (608, "çok keyifli ve sorunsuz zaman geçirdik", (0, 0, 1, 0, 0)),
+    (617, "27 ocak 1 mart tarihinde izmir çıkışlı gezipol", (1, 1, 1, 1, 1)),
+    (625, "21-23 kasım batı karadeniz turuna katıldık", (1, 1, 2, 0, 0)),
+    (644, "16 haziran kosovalı büyük balkan turuna katıldım", (2, 1, 2, 0, 0)),
+    (670, "farma tur ile çıktığımız balkanlar turunda her şey", (0, 2, 2, 0, 0)),
+    (671, "valizimizin tekeri otelde biraktigimiz yerde", (2, 0, 2, 0, 0)),
+    (681, "vietnam–kamboçya turu beklentimin çok üzerinde", (1, 1, 1, 1, 0)),
+    (690, "eskişehir social tur firması ile 30 haziranda", (0, 2, 2, 0, 0)),
+    (705, "8-9 kasım kapadokya turumuz", (0, 1, 1, 0, 0)),
+    (722, "26-28 aralık 1 gece konaklamalı tiflis", (1, 0, 2, 1, 1)),
+    (731, "merle tur ile erzincan kemaliye turuna katıldık", (2, 0, 2, 0, 0)),
+    (858, "profesyonel rehberlik hizmeti diye belirtilen hizmet asla", (0, 2, 2, 0, 0)),
+    (869, "29 ekim günü eskişehir kültür turuna katıldık", (2, 1, 2, 0, 0)),
+    (878, "f/p keşke daha planlı bir şekilde ilerletebilseydiniz", (2, 0, 2, 0, 0)),
+    (879, "ramazan bayramı gap turuna katıldım", (2, 1, 2, 2, 0)),
+    (881, "safranbolu amasra turuna katıldık 3 arkadaş", (2, 2, 2, 0, 0)),
+    (894, "kapadokya turunda hiçbir özen ilgi alaka yoktu", (2, 0, 2, 0, 2)),
+    (906, "oncelikle rehberiniz gayet iyiydi gulten hanim", (0, 1, 2, 0, 0)),
+    (911, "gap gezisinde, balkan gezileri gibi kilise gezmekten", (0, 0, 2, 1, 1)),
+    (927, "bu hafta sonu bursa gezisine katıldık", (2, 1, 2, 0, 2)),
+    (941, "2 mart sofya plovdiv turuna ailecek katıldık", (2, 2, 2, 0, 0)),
+    (942, "anlatım, gezi, imkan ve fiyat takdir edilesi", (0, 2, 2, 0, 0)),
+    (944, "9 ekim günü yaptığımız çanakkale şehitlik turundan", (0, 2, 2, 0, 0)),
+    (949, "fiyat bilgisi yanlış. şehitlik turuna katıldık", (0, 1, 2, 0, 2)),
+    (951, "konaklamalı çanakkale turuna katıldık", (0, 0, 2, 0, 0)),
+    (954, "gezi genel olarak güzeldi ama ismini söylemek istemediğim", (0, 2, 1, 0, 0)),
+    (955, "reyhan hanımın rehperligi çok iyidi", (1, 1, 2, 0, 0)),
+    (985, "ilk defa anlaşma sağladığımız ve asla güven", (0, 0, 2, 0, 0)),
+    (991, "tur rehberimiz iyi idi. ancak bir otobüsün", (0, 1, 2, 0, 0)),
+    (994, "turu kaldığımız otel aracılığıyla aldık", (2, 2, 2, 0, 0)),
+    (1002, "öncelikle herşey gayet güzeldi. rehberimiz deniz", (0, 1, 1, 0, 1)),
+    (1010, "18.01.2026 tarihli uludağ gezisine katıldık", (0, 2, 2, 0, 0)),
+    (1039, "noel yılbaşı turunda batum da güzel bir zaman", (0, 1, 1, 0, 0)),
+    (1040, "oksijen travel ile gürcistan tiflis ve batum turu", (1, 1, 1, 0, 1)),
+    (1053, "turun nasıl gittiği tura katılanların ne hissettiği", (0, 2, 2, 0, 0)),
+    (1062, "07 turizm ile seyahat etmeyi seviyorum ancak teknedeki", (1, 1, 2, 0, 2)),
+    (1069, "2025 temmuz ayı doğu karadeniz turumuz", (1, 1, 1, 2, 2)),
+    (1085, "28mart-4 nisan gap turuna katıldık ailece", (1, 1, 1, 1, 0)),
+    (536, "erzurum firması soğuk koşulları biliyorlardır", (2, 2, 2, 2, 0)),
+    (577, "20 kasım 2025 tarihinde batı karadeniz turuna", (0, 0, 2, 0, 2)),
+    (593, "2025 yılı aralık ayında iş arkadaşlarımızla abant", (0, 2, 2, 0, 0)),
+    (596, "bursa/uludağ turuna katılmak istedim", (1, 1, 2, 0, 0)),
+    (597, "kasim ayı içerisinde yedi göller turuna katıldık", (0, 2, 2, 0, 0)),
+    (606, "31 aralık-1 ocak bir gece konaklamalı yılbaşı", (1, 1, 1, 2, 0)),
+    (610, "31 aralık-1 ocak bir gece konaklamalı yılbaşı", (1, 1, 1, 2, 0)),
+    (634, "escan tur a almanya vize başvurusu için", (0, 0, 2, 0, 0)),
+    (635, "fatih isimli bir rehber vardı", (0, 2, 2, 0, 0)),
+    (641, "eşim ve ben escan tur ile ikinci turumuza", (0, 1, 2, 0, 0)),
+    (643, "27 eylül otobüsle kosovalı büyük balkan", (2, 1, 2, 2, 0)),
+    (647, "hafta sonu günübirlik yaptığımız yedigöller", (2, 0, 2, 0, 2)),
+    (648, "bolu gölcük turuna katıldık", (2, 0, 2, 0, 2)),
+    (651, "okulumuzdan 21-24 öğretmen ile birlikte anlaşarak", (2, 0, 2, 0, 2)),
+    (653, "yedigöller gezisi çok güzeldi", (2, 1, 2, 0, 2)),
+    (658, "8-12 eylül karadeniz turuna katıldık", (0, 1, 1, 0, 0)),
+    (661, "bu hafta butik ege turuna katıldım", (1, 1, 1, 0, 0)),
+    (688, "katılmış olduğum 16-20 haziran marmaris", (0, 1, 2, 0, 0)),
+    (706, "21-24 ağustos tarihlerinde marmaris-datça", (1, 1, 1, 1, 1)),
+    (713, "yılbaşı tiflis-batum turuna kaltıldık", (0, 0, 2, 0, 0)),
+    (720, "26-29 eylül kapadokya turu dönüş yolundayım", (1, 2, 2, 1, 0)),
+    (723, "26-29 eylül kapadokya turu dönüş yolundayım", (1, 2, 2, 1, 0)),
+    (747, "gito badara ve elevit turu gerçekleştirdik", (1, 0, 2, 0, 0)),
+    (751, "kesinlikle tavsiye etmiyorum. günübirlik turlarından", (2, 2, 2, 0, 0)),
+    (787, "merhaba ben 17 eylül gap turu için", (0, 2, 2, 0, 0)),
+    (797, "merhaba 5 ağustosta başlayan karadeniz batum", (0, 2, 2, 0, 0)),
+    (798, "3-6 temmuz ankara çıkışlı karadeniz", (1, 2, 2, 2, 0)),
+    (804, "3 kuzen olarak katıldık hayatımızdaki en eğlenceli", (0, 1, 1, 1, 1)),
+    (806, "3 gece 4 gün kız kıza geldiğimiz olympos", (0, 1, 1, 1, 1)),
+    (843, "katıldığım turdan çok memnun kaldım", (0, 1, 1, 0, 0)),
+    (855, "yaser turizimle bir yere gidiyorsanız", (2, 2, 2, 0, 0)),
+    (856, "19 mayıs büyükada&heybeliada turuna", (0, 2, 2, 0, 0)),
+    (859, "daha önce birçok kez tura katıldığımız", (0, 0, 2, 0, 0)),
+    (863, "istanbul boğaz , adalar gibi birçok turuna katıldım", (0, 0, 2, 0, 0)),
+    (895, "doğru düzgün ilgilenilmiyor kahvaltı parası verdik", (0, 0, 2, 0, 2)),
+    (900, "27 ağustos 2024 çıkışlı alanya turu", (2, 0, 2, 2, 0)),
+    (901, "large tur ve sau turun bir araya gelerek", (2, 1, 2, 2, 0)),
+    (905, "22-27 nisan gap turundaydık", (2, 0, 2, 2, 0)),
+    (925, "bir tek otelde sıkıntı yaşadık", (0, 0, 1, 2, 0)),
+    (927, "bu hafta sonu bursa gezisine katıldık", (2, 1, 2, 0, 2)),
+    (936, "çok çok güzeldi aşırı eğlendik", (0, 0, 1, 0, 0)),
+    (940, "ağustos ayinda 47 kişilik özel bir grupla", (2, 2, 2, 0, 2)),
+    (947, "rehberimiz zeki harmandalı bey e anlatımları", (2, 1, 2, 0, 2)),
+    (950, "rehberimiz zeki harmandalı beye çok teşekkür", (2, 1, 2, 0, 2)),
+    (952, "belirli bir standartları yok", (2, 1, 2, 0, 0)),
+    (980, "19 eylül orta avrupa turuna eşim ile katıldık", (1, 1, 1, 0, 0)),
+    (1007, "13/15 subat kapadokya turuna katıldık", (2, 1, 2, 0, 2)),
+    (1008, "bir daha crazy travel ile tur mu", (2, 1, 2, 0, 0)),
+    (1009, "öncelikle bu yorumu yazma konusunda çok kararsızdim", (2, 2, 2, 0, 0)),
+    (1015, "27 temmuz çıkışlı 4 gece 5 gün karadeniz", (1, 1, 1, 0, 0)),
+    (1024, "27 temmuz çıkışlı 4 gece 5 gün karadeniz", (1, 1, 1, 0, 0)),
+    (1031, "12-14 aralık konya şeb-i arus", (2, 0, 2, 0, 0)),
+    (1032, "26.27 ekim de kapadokya ya gittik", (2, 0, 2, 0, 0)),
+    (1033, "kesinlikle tavsiye etmem", (0, 0, 2, 0, 0)),
+    (1054, "öncelikle araçta emniyet kemeri kullanım bilgisi", (2, 2, 2, 0, 0)),
+    (1072, "rehberimiz merve yaptığı işe hakim", (2, 1, 1, 0, 0)),
+    (1075, "ailece yılbaşı kapadokya turuna katıldık", (1, 1, 2, 0, 2)),
+    (711, "12.13 ekim erzincan kemaliye turuna katıldım", (0, 1, 2, 0, 0)),
+    (724, "sümela turuna katıldım ama memnun kalmadım", (1, 2, 2, 0, 2)),
+    (727, "batum-tiflis turu keyifliydi", (0, 2, 2, 1, 1)),
+    (852, "ben 3. ye geldim tur ile daha önce", (1, 1, 2, 0, 2)),
+    (871, "30 ekim istanbul turunda gittigimiz gezide", (2, 0, 2, 0, 0)),
+    (1046, "30 ağustos delik deniz sapadere kanyonu", (0, 2, 2, 0, 0)),
+]
+
+
+def has_pattern(text: str, pattern: str) -> bool:
+    """Return True when a case-insensitive Turkish text regex matches."""
+    return re.search(pattern, text, flags=re.IGNORECASE) is not None
 
 
 # Aspect vocabularies were selected by reading the tourism comments and mapping
@@ -475,7 +638,18 @@ REGEX_BOOSTERS = {
 
 def normalize_text(text: object) -> str:
     """Normalize text for rule checks while preserving Turkish characters."""
-    return re.sub(r"\s+", " ", "" if pd.isna(text) else str(text).lower()).strip()
+    normalized = "" if pd.isna(text) else str(text).lower()
+    # Python lowercases "İ" to "i" + combining dot; collapse it for matching.
+    normalized = normalized.replace("i̇", "i")
+    return re.sub(r"\s+", " ", normalized).strip()
+
+
+def normalize_review_for_dedupe(text: object) -> str:
+    """Normalize review text to remove duplicate scraped comments."""
+    normalized = "" if pd.isna(text) else str(text)
+    normalized = unicodedata.normalize("NFKC", normalized)
+    normalized = normalized.casefold()
+    return re.sub(r"\s+", " ", normalized).strip()
 
 
 def phrase_pattern(phrase: str) -> str:
@@ -551,9 +725,222 @@ def extract_aspect_signal(text: object, aspect: str, star_rating: int) -> dict[s
     }
 
 
+def apply_manual_audit_corrections(text: object, star_rating: int, labels: dict[str, int]) -> dict[str, int]:
+    """Apply the row-level audit corrections found during manual review.
+
+    The first relabel pass is deliberately transparent and broad. During the
+    new-review audit, the main remaining errors were negated positives
+    ("bilgili değildi"), contrast structures ("rehber haricinde her şey kötü"),
+    and low-star mixed reviews where one praised aspect was copied to unrelated
+    categories. This second pass keeps the same 0/1/2 protocol but gives
+    concrete complaint statements priority.
+    """
+    normalized = normalize_text(text)
+    corrected = labels.copy()
+
+    transport_aspect = (
+        r"otobüs|otobus|araç|arac|minibüs|minibus|transfer|servis|şoför|sofor|"
+        r"kaptan|koltuk|klima|uçak|ucak|tren|yolculuk|fren|lastik|bagaj|valiz"
+    )
+    transport_negative = (
+        r"fren tut|duman çıktı|duman cikti|bozul|arıza|ariza|ayrı koltuk|ayri koltuk|"
+        r"koltuk.{0,70}(dar|küçük|kucuk|rahatsız|rahatsiz|sığma|sigma)|"
+        r"klima.{0,60}(çalışm|calism|soğuk|soguk|sıcak verilmedi|sicak verilmedi)|"
+        r"(otobüs|otobus|araç|arac|minibüs|minibus).{0,100}(kötü|kotu|eski|berbat|"
+        r"rahatsız|rahatsiz|tehlike|güvensiz|guvensiz)|"
+        r"yolculuk.{0,100}(kötü|kotu|rahatsız|rahatsiz|yorucu|işkence|iskence)|"
+        r"(şoför|sofor).{0,100}(kaba|sigara|tehlike|saygısız|saygisiz)|"
+        r"(bagaj|valiz).{0,100}(kaybol|bırak|birak)"
+    )
+    transport_positive = (
+        r"(şoför|sofor|kaptan|araç|arac|otobüs|otobus|yolculuk|transfer|tren).{0,120}"
+        r"(iyi|güzel|guzel|rahat|konforlu|güvenli|guvenli|teşekkür|tesekkur|"
+        r"memnun|sorunsuz|emniyetli)"
+    )
+
+    guide_aspect = r"rehber|guide|tur lider|lider"
+    guide_positive = (
+        r"rehber.{0,170}(iyi|güzel|guzel|bilgili|ilgili|profesyonel|yardımcı|yardimci|"
+        r"teşekkür|tesekkur|harika|mükemmel|mukemmel|güler|guler|donanımlı|donanimli|"
+        r"keyifli|başarılı|basarili|şahane|sahane)|"
+        r"rehberimiz.{0,90}haricinde her şey kötü|rehberimiz.{0,90}haricinde her sey kotu|"
+        r"rehberin anlatımı.{0,50}dışında|rehberin anlatimi.{0,50}disinda"
+    )
+    guide_negative = (
+        r"rehber.{0,170}(bilgili değildi|bilgili degildi|bilgisiz|yetersiz|kötü|kotu|"
+        r"ilgisiz|kaba|azarlad|gelmedi|yoktu|anlatmad|hakim değildi|hakim degildi|"
+        r"şikayetçiydik|sikayetciydik|profesyonel değildi|profesyonel degildi|facia|"
+        r"koordinasyon sağlayamadı|koordinasyon saglayamadi|acemi|bencil)|"
+        r"yerel rehber.{0,100}(bulmalı|bulmali|olmalı|olmali|yok)|"
+        r"rehber.{0,90}(iyi|bilgili|ilgili|profesyonel|yeterli|hakim).{0,30}(değil|degil|değildi|degildi)"
+    )
+    guide_positive_exception = (
+        r"rehberimiz.{0,90}haricinde her şey kötü|rehberimiz.{0,90}haricinde her sey kotu|"
+        r"rehberin anlatımı.{0,50}dışında|rehberin anlatimi.{0,50}disinda|"
+        r"rehberimiz.{0,120}(çok yardımcı|cok yardimci|çok profesyonel|cok profesyonel)"
+    )
+
+    organization_aspect = (
+        r"tur|program|plan|firma|acenta|şirket|sirket|rezervasyon|iletişim|iletisim|"
+        r"ücret|ucret|ödeme|odeme|iade|zaman|saat|bilgilendirme"
+    )
+    organization_negative = (
+        r"plansız|plansiz|plan[\s-]*program sıfır|plan[\s-]*program sifir|"
+        r"kesinlikle planlı bir tur değildi|kesinlikle planli bir tur degildi|"
+        r"program.{0,100}(uyulmad|gidilmedi|görülmedi|gorulmedi|iptal|kötü|kotu|aksak|sıfır|sifir)|"
+        r"tur.{0,150}(rezalet|kötü|kotu|hayal kırıklığı|hayal kirikligi|mağdur|magdur|"
+        r"pişman|pisman|iptal|aksak|plansız|plansiz|mahvet)|"
+        r"firma.{0,180}(dönüş yapmad|donus yapmad|ulaşamad|ulasamad|çözüm sunmad|cozum sunmad|"
+        r"yanılt|yanilt|mağdur|magdur|kötü|kotu|güven sarsıcı|guven sarsici)|"
+        r"acenta.{0,140}(haberi olmaması|haberi olmamasi|kötü|kotu|şikayet|sikayet)|"
+        r"iletişim.{0,100}(kötü|kotu|yok|kuramad|dönüş yapılmad|donus yapilmad|sıkıntı|sikinti)|"
+        r"zaman.{0,100}(kayb|az|yetmedi|kalmad|boşa|bosa|geç kald|gec kald|gecik)|beklemek zorunda|bekledik|"
+        r"ekstra.{0,100}(para|ücret|ucret)|fiş|fis|fatura|yanlış bilgilendirme|yanlis bilgilendirme|"
+        r"ayıplı hizmet|ayipli hizmet|iade|tüketici|tuketici|şikayet|sikayet|"
+        r"serbest zaman vermediler|alışveriş.{0,80}zorunda|alisveris.{0,80}zorunda|"
+        r"anlaşmalı.{0,80}zorunda|anlasmali.{0,80}zorunda|zorunda bırakıldık|zorunda birakildik|"
+        r"bizi kandır|bizi kandir|telafi edilmedi|özensiz bilgilendirme|ozensiz bilgilendirme"
+    )
+    organization_positive = (
+        r"tur.{0,140}(güzel|guzel|harika|keyifli|memnun|tavsiye|teşekkür|tesekkur|"
+        r"başarılı|basarili|sorunsuz|dolu dolu|planlı|planli)|"
+        r"organizasyon.{0,100}(iyi|güzel|guzel|başarılı|basarili)|"
+        r"firma.{0,120}(iyi|güzel|guzel|ilgili|profesyonel|teşekkür|tesekkur|memnun)"
+    )
+
+    hotel_aspect = r"otel|konaklama|oda|tesis|resepsiyon|kaldığımız|kaldigimiz|konaklad"
+    hotel_negative = (
+        r"otel.{0,180}(berbat|kötü|kotu|hijyenik değildi|hijyenik degildi|pis|kirli|eski|"
+        r"sigara|uzak|başka|baska|farklı|farkli|ayarlanmamış|ayarlanmamis|"
+        r"rezervasyon.{0,50}yapılmamış|rezervasyon.{0,50}yapilmamis|kümes|kumes|küçük|kucuk|"
+        r"vasat|yetersiz|mağdur|magdur|soğuk|soguk)|"
+        r"oda.{0,120}(pis|kirli|küçük|kucuk|kötü|kotu|kan lekesi|kıl|kil|soğuk|soguk)|"
+        r"konaklama.{0,120}(kötü|kotu|uzak|başka|baska|mağdur|magdur)|"
+        r"seçilen yer iyi değildi|secilen yer iyi degildi|temizlik.{0,100}eksik|"
+        r"oteli her açıdan berbattı|oteli her acidan berbatti"
+    )
+    hotel_positive = (
+        r"otel.{0,150}(güzel|guzel|iyi|temiz|memnun|lüks|luks|harika|konforlu|mükemmel|mukemmel)|"
+        r"oteller.{0,100}güzeldi|oteller.{0,100}guzeldi|konaklama.{0,100}(iyi|güzel|guzel|memnun)|"
+        r"otel seçimi.{0,80}(tam isabet|mükemmel|mukemmel)"
+    )
+    hotel_positive_exception = (
+        r"oteller.{0,100}güzeldi.{0,60}(haricinde|dışında)|"
+        r"oteller.{0,100}guzeldi.{0,60}(haricinde|disinda)|"
+        r"rehberin anlatımı ve otellerin dışında|rehberin anlatimi ve otellerin disinda|"
+        r"otel seçimi.{0,80}(tam isabet|mükemmel|mukemmel)|"
+        r"otelimiz.{0,80}(harika|güzel|guzel|iyi|temiz|başarılı|basarili)|"
+        r"oteller.{0,100}(güzeldi|guzeldi|iyiydi|temizdi|harikaydı|harikaydi)"
+    )
+
+    food_aspect = (
+        r"yemek|kahvaltı|kahvalti|restoran|lokanta|köfte|kofte|menü|menu|lezzet|ikram|öğle|ogle|akşam yemeği|aksam yemegi|"
+        r"aç kald|ac kald|aç dur|ac dur"
+    )
+    food_negative = (
+        r"yemek.{0,160}(kötü|kotu|berbat|lezzetsiz|soğuk|soguk|pahalı|pahali|hijyen|"
+        r"zorunda|tatsız|tatsiz|yetersiz|rezalet|fiyasko)|"
+        r"kahvaltı.{0,140}(kötü|kotu|pahalı|pahali|yetersiz|küçük|kucuk|hoş olmadı|hos olmadi)|"
+        r"restoran.{0,120}(kötü|kotu|pahalı|pahali|hijyen|zorunda|vasat)|"
+        r"köfte.{0,120}(kötü|kotu|soğuk|soguk|pahalı|pahali)|"
+        r"yemek yiyemedik|aç durmak|ac durmak|aç kald|ac kald|"
+        r"yöresel hiçbir şey yeme|yoresel hicbir sey yeme|"
+        r"seçilen yerin verdiği yemekler.{0,80}kötü|secilen yerin verdigi yemekler.{0,80}kotu|"
+        r"vasat yemek"
+    )
+    food_positive = (
+        r"yemek.{0,140}(güzel|guzel|iyi|lezzetli|memnun|yeterli|doyurucu|harika)|"
+        r"kahvaltı.{0,120}(güzel|guzel|iyi|lezzetli|yeterli|taze|zengin)|"
+        r"restoran.{0,120}(güzel|guzel|iyi|lezzetli)|"
+        r"yemekler.{0,100}(güzeldi|guzeldi|lezzetliydi|yeterli|başarılı|basarili)|"
+        r"yemekleri.{0,100}(güzel|guzel|iyi|lezzetli|başarılı|basarili|temiz)"
+    )
+
+    if has_pattern(normalized, transport_aspect):
+        if has_pattern(normalized, transport_negative):
+            corrected["Ulasim"] = 2
+        elif corrected["Ulasim"] == 0 and has_pattern(normalized, transport_positive):
+            corrected["Ulasim"] = 1
+
+    if has_pattern(normalized, guide_aspect):
+        if has_pattern(normalized, guide_positive_exception):
+            corrected["Rehber"] = 1
+        elif has_pattern(normalized, guide_negative):
+            corrected["Rehber"] = 2
+        elif has_pattern(normalized, guide_positive):
+            corrected["Rehber"] = 1
+
+    if has_pattern(normalized, organization_aspect):
+        if has_pattern(normalized, organization_negative):
+            corrected["Organizasyon"] = 2
+        elif corrected["Organizasyon"] == 0 and has_pattern(normalized, organization_positive):
+            corrected["Organizasyon"] = 1
+        elif (
+            corrected["Organizasyon"] == 2
+            and star_rating >= 4
+            and has_pattern(normalized, organization_positive)
+            and not has_pattern(normalized, r"lakin|ancak|ama|fakat|şikayet|sikayet|mağdur|magdur|pişman|pisman|rezalet|aksak|iptal")
+        ):
+            corrected["Organizasyon"] = 1
+
+    if has_pattern(normalized, hotel_aspect):
+        if has_pattern(normalized, hotel_positive_exception):
+            corrected["Otel"] = 1
+        elif has_pattern(normalized, hotel_negative):
+            corrected["Otel"] = 2
+        elif has_pattern(normalized, hotel_positive):
+            corrected["Otel"] = 1
+
+    if has_pattern(normalized, food_aspect):
+        if has_pattern(normalized, food_negative):
+            corrected["Yemek"] = 2
+        elif has_pattern(normalized, food_positive):
+            corrected["Yemek"] = 1
+    else:
+        corrected["Yemek"] = 0
+
+    return corrected
+
+
+def apply_new_review_manual_overrides(labelled_df: pd.DataFrame) -> int:
+    """Apply exact row-level decisions from the manual new-review audit."""
+    applied_count = 0
+    for row_index, snippet, labels in MANUAL_NEW_REVIEW_AUDIT_OVERRIDES:
+        normalized_snippet = normalize_text(snippet)
+        candidate_indexes = [row_index, row_index - 1, row_index + 1]
+        resolved_index = None
+        for candidate_index in candidate_indexes:
+            if 0 <= candidate_index < len(labelled_df):
+                review_text = normalize_text(labelled_df.at[candidate_index, "Yorum"])
+                if normalized_snippet in review_text:
+                    resolved_index = candidate_index
+                    break
+        if resolved_index is None:
+            matching_indexes = [
+                index
+                for index, review in labelled_df["Yorum"].items()
+                if normalized_snippet in normalize_text(review)
+            ]
+            if len(matching_indexes) != 1:
+                continue
+            resolved_index = matching_indexes[0]
+        for column, label in zip(TARGET_COLUMNS, labels):
+            labelled_df.at[resolved_index, column] = label
+        applied_count += 1
+    return applied_count
+
+
 def relabel_dataframe(raw_df: pd.DataFrame) -> pd.DataFrame:
     """Create a clean labelled dataset from the raw scraped comments."""
     labelled_df = raw_df[["Yorum", "Yildiz"]].copy()
+    labelled_df["Yorum"] = labelled_df["Yorum"].fillna("").astype(str).str.strip()
+    labelled_df = labelled_df[labelled_df["Yorum"].str.len() > 0].copy()
+    labelled_df = labelled_df[
+        labelled_df["Yorum"].str.contains(r"[A-Za-z0-9ÇĞİÖŞÜçğıöşü]", regex=True)
+    ].copy()
+    labelled_df["_dedupe_key"] = labelled_df["Yorum"].map(normalize_review_for_dedupe)
+    labelled_df = labelled_df.drop_duplicates(subset=["_dedupe_key"], keep="first")
+    labelled_df = labelled_df.drop(columns=["_dedupe_key"]).reset_index(drop=True)
     labelled_df["Yildiz"] = pd.to_numeric(labelled_df["Yildiz"], errors="coerce").fillna(3).astype(int)
     labelled_df["Yildiz"] = labelled_df["Yildiz"].clip(lower=1, upper=5)
 
@@ -562,6 +949,19 @@ def relabel_dataframe(raw_df: pd.DataFrame) -> pd.DataFrame:
             extract_aspect_signal(review, aspect, int(star_rating))["label"]
             for review, star_rating in zip(labelled_df["Yorum"], labelled_df["Yildiz"])
         ]
+
+    corrected_labels = [
+        apply_manual_audit_corrections(
+            row["Yorum"],
+            int(row["Yildiz"]),
+            {aspect: int(row[aspect]) for aspect in TARGET_COLUMNS},
+        )
+        for _, row in labelled_df.iterrows()
+    ]
+    for aspect in TARGET_COLUMNS:
+        labelled_df[aspect] = [labels[aspect] for labels in corrected_labels]
+
+    labelled_df.attrs["manual_new_review_audit_overrides_applied"] = apply_new_review_manual_overrides(labelled_df)
 
     return labelled_df
 
@@ -574,16 +974,26 @@ def print_summary(old_df: pd.DataFrame | None, new_df: pd.DataFrame) -> None:
     for column in TARGET_COLUMNS:
         print(f"  {column}: {new_df[column].value_counts().sort_index().to_dict()}")
 
-    if old_df is not None and all(column in old_df.columns for column in TARGET_COLUMNS):
+    if (
+        old_df is not None
+        and len(old_df) == len(new_df)
+        and all(column in old_df.columns for column in TARGET_COLUMNS)
+    ):
         print("\nChanged labels compared with previous updated_dataset.csv:")
         changed_any = (old_df[TARGET_COLUMNS].to_numpy() != new_df[TARGET_COLUMNS].to_numpy()).any(axis=1)
         print(f"  Rows changed in at least one category: {int(changed_any.sum())}")
         for column in TARGET_COLUMNS:
             changed_count = int((old_df[column].to_numpy() != new_df[column].to_numpy()).sum())
             print(f"  {column}: {changed_count}")
+    elif old_df is not None:
+        print("\nChanged labels compared with previous updated_dataset.csv: skipped (row count changed).")
 
     combo_count = new_df[TARGET_COLUMNS].astype(str).agg("-".join, axis=1).nunique()
     print(f"\nUnique target combinations: {combo_count}")
+    print(
+        "Manual new-review audit overrides applied:",
+        new_df.attrs.get("manual_new_review_audit_overrides_applied", 0),
+    )
 
 
 def main() -> None:
